@@ -1,7 +1,13 @@
 import { createSlice } from '@reduxjs/toolkit';
+
+// Lire themeMode depuis localStorage au boot
+const savedTheme = (() => {
+  try { return localStorage.getItem('faytekAI_themeMode') || 'dark'; } catch { return 'dark'; }
+})();
+
 const slice = createSlice({
   name: 'settings',
-  initialState: { themeMode: 'dark' },
+  initialState: { themeMode: savedTheme },
   reducers: {
     setThemeMode: (state, action) => { state.themeMode = action.payload; },
     toggleTheme: (state) => {
@@ -11,5 +17,6 @@ const slice = createSlice({
     },
   },
 });
+
 export const { setThemeMode, toggleTheme } = slice.actions;
 export default slice.reducer;

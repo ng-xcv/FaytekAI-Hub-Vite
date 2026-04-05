@@ -36,7 +36,6 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.14.0",
     "recharts": "^3.8.1",
-    "redux-persist": "^6.0.0",
     "simplebar-react": "^3.3.2",
     "stylis": "^4.3.6",
     "stylis-plugin-rtl": "^2.1.1",
