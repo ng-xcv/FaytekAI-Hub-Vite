@@ -12,9 +12,10 @@ import LoadingScreen from './components/LoadingScreen';
 export default function App() {
   return (
     <ReduxProvider store={store}>
-      <PersistGate loading={<LoadingScreen />} persistor={persistor}>
-        <BrowserRouter>
-          <ThemeProvider>
+      {/* ThemeProvider DOIT être dans ReduxProvider (useSelector) mais HORS PersistGate */}
+      <ThemeProvider>
+        <PersistGate loading={<LoadingScreen />} persistor={persistor}>
+          <BrowserRouter>
             <AuthProvider>
               <PermissionsProvider>
                 <SnackbarProvider
@@ -26,9 +27,9 @@ export default function App() {
                 </SnackbarProvider>
               </PermissionsProvider>
             </AuthProvider>
-          </ThemeProvider>
-        </BrowserRouter>
-      </PersistGate>
+          </BrowserRouter>
+        </PersistGate>
+      </ThemeProvider>
     </ReduxProvider>
   );
 }
