@@ -7,49 +7,69 @@ const ICONS = {
   dashboard: getIcon('eva:grid-fill'),
   tasks: getIcon('eva:checkmark-square-2-fill'),
   projects: getIcon('eva:folder-fill'),
-  calendar: getIcon('eva:calendar-fill'),
-  emails: getIcon('eva:email-fill'),
-  expenses: getIcon('eva:credit-card-fill'),
-  ideas: getIcon('eva:bulb-fill'),
-  crm: getIcon('eva:people-fill'),
-  reports: getIcon('eva:bar-chart-2-fill'),
   focus: getIcon('eva:clock-fill'),
+  emails: getIcon('eva:email-fill'),
+  calendar: getIcon('eva:calendar-fill'),
+  crm: getIcon('eva:people-fill'),
+  expenses: getIcon('eva:credit-card-fill'),
   missionControl: getIcon('eva:settings-2-fill'),
+  memory: getIcon('eva:layers-fill'),
+  brainstorming: getIcon('eva:bulb-fill'),
   office: getIcon('eva:home-fill'),
   settings: getIcon('eva:settings-fill'),
 };
 
 const navConfig = [
-  { subheader: 'Principal', items: [{ title: 'Tableau de bord', path: PATH_DASHBOARD.home, icon: ICONS.dashboard }] },
   {
-    subheader: 'Productivité',
+    subheader: 'Vue d\'ensemble',
     items: [
-      { title: 'Tâches', path: PATH_DASHBOARD.tasks.root, icon: ICONS.tasks, children: [
-        { title: 'Liste', path: PATH_DASHBOARD.tasks.list },
-        { title: 'Board', path: PATH_DASHBOARD.tasks.board },
-        { title: 'Timeline', path: PATH_DASHBOARD.tasks.timeline },
-        { title: 'Calendrier', path: PATH_DASHBOARD.tasks.calendar },
-      ]},
+      { title: 'Tableau de bord', path: PATH_DASHBOARD.home, icon: ICONS.dashboard },
+    ],
+  },
+  {
+    subheader: 'Travail',
+    items: [
+      {
+        title: 'Tâches',
+        path: PATH_DASHBOARD.tasks.root,
+        icon: ICONS.tasks,
+        children: [
+          { title: 'Liste', path: PATH_DASHBOARD.tasks.list },
+          { title: 'Board', path: PATH_DASHBOARD.tasks.board },
+          { title: 'Timeline', path: PATH_DASHBOARD.tasks.timeline },
+          { title: 'Calendrier', path: PATH_DASHBOARD.tasks.calendar },
+        ],
+      },
       { title: 'Projets', path: PATH_DASHBOARD.projects.root, icon: ICONS.projects },
-      { title: 'Calendrier', path: PATH_DASHBOARD.calendar.root, icon: ICONS.calendar },
-      { title: 'Emails', path: PATH_DASHBOARD.emails.root, icon: ICONS.emails },
       { title: 'Mode Focus', path: PATH_DASHBOARD.focus.root, icon: ICONS.focus },
     ],
   },
   {
-    subheader: 'Business',
+    subheader: 'Communication',
     items: [
-      { title: 'Dépenses', path: PATH_DASHBOARD.expenses.root, icon: ICONS.expenses },
-      { title: 'Ideas & BMAD', path: PATH_DASHBOARD.ideas.root, icon: ICONS.ideas },
+      { title: 'Emails', path: PATH_DASHBOARD.emails.root, icon: ICONS.emails },
+      { title: 'Calendrier', path: PATH_DASHBOARD.calendar.root, icon: ICONS.calendar },
       { title: 'CRM', path: PATH_DASHBOARD.crm.root, icon: ICONS.crm },
-      { title: 'Rapports', path: PATH_DASHBOARD.reports.root, icon: ICONS.reports },
     ],
   },
   {
-    subheader: 'Système',
+    subheader: 'Finances',
+    items: [
+      { title: 'Dépenses', path: PATH_DASHBOARD.expenses.root, icon: ICONS.expenses },
+    ],
+  },
+  {
+    subheader: 'AI',
+    items: [
+      { title: 'Mission Control', path: PATH_DASHBOARD.missionControl.root, icon: ICONS.missionControl },
+      { title: 'Mémoire', path: PATH_DASHBOARD.memory.root, icon: ICONS.memory },
+      { title: 'Brainstorming BMAD', path: PATH_DASHBOARD.brainstorming.root, icon: ICONS.brainstorming },
+    ],
+  },
+  {
+    subheader: 'Espace',
     items: [
       { title: 'Bureau Digital', path: PATH_DASHBOARD.office.root, icon: ICONS.office },
-      { title: 'Mission Control', path: PATH_DASHBOARD.missionControl.root, icon: ICONS.missionControl },
       { title: 'Paramètres', path: PATH_DASHBOARD.settings.root, icon: ICONS.settings },
     ],
   },

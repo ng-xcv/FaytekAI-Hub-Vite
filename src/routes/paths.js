@@ -45,9 +45,10 @@ export const PATH_DASHBOARD = {
     interactions: path(ROOTS_DASHBOARD, '/crm/interactions'),
     view: (id) => path(ROOTS_DASHBOARD, `/crm/contacts/${id}`),
   },
-  reports: { root: path(ROOTS_DASHBOARD, '/reports') },
   focus: { root: path(ROOTS_DASHBOARD, '/focus') },
   missionControl: { root: path(ROOTS_DASHBOARD, '/mission-control') },
+  memory: { root: path(ROOTS_DASHBOARD, '/memory') },
+  brainstorming: { root: path(ROOTS_DASHBOARD, '/brainstorming') },
   office: { root: path(ROOTS_DASHBOARD, '/office') },
   settings: { root: path(ROOTS_DASHBOARD, '/settings'), security: path(ROOTS_DASHBOARD, '/settings/security') },
 };

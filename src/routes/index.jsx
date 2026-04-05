@@ -27,9 +27,10 @@ const IdeaList = Loadable(lazy(() => import('../pages/ideas/IdeaList')));
 const IdeaDetail = Loadable(lazy(() => import('../pages/ideas/IdeaDetail')));
 const CrmContacts = Loadable(lazy(() => import('../pages/crm/CrmContacts')));
 const CrmInteractions = Loadable(lazy(() => import('../pages/crm/CrmInteractions')));
-const Reports = Loadable(lazy(() => import('../pages/reports/Reports')));
 const FocusMode = Loadable(lazy(() => import('../pages/focus/FocusMode')));
 const MissionControl = Loadable(lazy(() => import('../pages/mission-control/MissionControl')));
+const Memory = Loadable(lazy(() => import('../pages/memory/Memory')));
+const Brainstorming = Loadable(lazy(() => import('../pages/brainstorming/Brainstorming')));
 const Office = Loadable(lazy(() => import('../pages/office/Office')));
 const Settings = Loadable(lazy(() => import('../pages/settings/Settings')));
 const Page404 = Loadable(lazy(() => import('../pages/Page404')));
@@ -73,9 +74,10 @@ export default function Router() {
           { path: 'contacts', element: <CrmContacts /> },
           { path: 'interactions', element: <CrmInteractions /> },
         ]},
-        { path: 'reports', element: <Reports /> },
         { path: 'focus', element: <FocusMode /> },
         { path: 'mission-control', element: <MissionControl /> },
+        { path: 'memory', element: <Memory /> },
+        { path: 'brainstorming', element: <Brainstorming /> },
         { path: 'office', element: <Office /> },
         { path: 'settings', element: <Settings /> },
       ],
