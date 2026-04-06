@@ -5,32 +5,13 @@ import { Box, Stack, Drawer, Typography, Divider } from '@mui/material';
 import { Icon } from '@iconify/react';
 import useResponsive from '../../../hooks/useResponsive';
 import useAuth from '../../../hooks/useAuth';
-import Scrollbar from '../../../components/Scrollbar';
 import NavSection from './NavSection';
 import navConfig from './NavConfig';
 import { NAVBAR } from '../../../config';
 
-const DesktopSidebar = styled('div')(({ theme }) => ({
-  display: 'none',
-  [theme.breakpoints.up('lg')]: {
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    bottom: 0,
-    width: NAVBAR.DASHBOARD_WIDTH,
-    zIndex: theme.zIndex.drawer,
-    borderRight: `1px dashed ${alpha(theme.palette.divider, 1)}`,
-    backgroundColor: theme.palette.background.default,
-    overflowY: 'auto',
-    overflowX: 'hidden',
-  },
-}));
-
 function FaytekLogo() {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', px: 2.5, py: 2.5, flexShrink: 0 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', px: 2.5, py: 2.5 }}>
       <Box sx={{ width: 40, height: 40, borderRadius: 1.5, bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1.5, flexShrink: 0 }}>
         <Typography sx={{ fontSize: 16, fontWeight: 900, color: 'primary.contrastText', lineHeight: 1 }}>F</Typography>
       </Box>
@@ -44,7 +25,7 @@ function FaytekLogo() {
 
 function NavbarAccount({ user }) {
   return (
-    <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.5, flexShrink: 0 }} spacing={1.5}>
+    <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.5 }} spacing={1.5}>
       <Box sx={{ width: 38, height: 38, borderRadius: '50%', bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14, fontWeight: 700, color: 'primary.contrastText' }}>
         {(user?.prenom || user?.name || 'U')[0].toUpperCase()}
       </Box>
@@ -56,14 +37,14 @@ function NavbarAccount({ user }) {
   );
 }
 
-function SidebarContent({ user }) {
+function SidebarInner({ user }) {
   return (
-    <>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <FaytekLogo />
       <Divider sx={{ borderStyle: 'dashed' }} />
       <NavbarAccount user={user} />
       <Divider sx={{ borderStyle: 'dashed', mb: 0.5 }} />
-      <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', overflowX: 'hidden' }}>
         <NavSection navConfig={navConfig} />
       </Box>
       <Box sx={{ p: 2, flexShrink: 0 }}>
@@ -75,7 +56,7 @@ function SidebarContent({ user }) {
           <Typography variant="caption" display="block" sx={{ color: 'text.disabled', mt: 0.3 }}>© 2026 Faytek Solution</Typography>
         </Box>
       </Box>
-    </>
+    </Box>
   );
 }
 
@@ -91,22 +72,31 @@ export default function NavbarVertical({ isOpenSidebar, onCloseSidebar }) {
   return (
     <>
       {/* Mobile: Drawer overlay */}
-      {!isDesktop && (
-        <Drawer
-          open={isOpenSidebar}
-          onClose={onCloseSidebar}
-          PaperProps={{ sx: { width: NAVBAR.DASHBOARD_WIDTH, display: 'flex', flexDirection: 'column' } }}
-        >
-          <SidebarContent user={user} />
-        </Drawer>
-      )}
+      <Drawer
+        open={isDesktop ? false : isOpenSidebar}
+        onClose={onCloseSidebar}
+        PaperProps={{ sx: { width: NAVBAR.DASHBOARD_WIDTH } }}
+      >
+        <SidebarInner user={user} />
+      </Drawer>
 
-      {/* Desktop: sidebar fixe */}
-      {isDesktop && (
-        <DesktopSidebar>
-          <SidebarContent user={user} />
-        </DesktopSidebar>
-      )}
+      {/* Desktop: sidebar fixe via Box */}
+      <Box
+        sx={{
+          display: { xs: 'none', lg: 'block' },
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: NAVBAR.DASHBOARD_WIDTH,
+          zIndex: 1200,
+          bgcolor: 'background.default',
+          borderRight: (t) => `1px dashed ${alpha(t.palette.divider, 1)}`,
+          boxShadow: 'none',
+        }}
+      >
+        <SidebarInner user={user} />
+      </Box>
     </>
   );
 }
