@@ -17,6 +17,8 @@ const ICONS = {
   brainstorming: getIcon('eva:bulb-fill'),
   office: getIcon('eva:home-fill'),
   settings: getIcon('eva:settings-fill'),
+  reports: getIcon('eva:bar-chart-2-fill'),
+  ideas: getIcon('eva:smiling-face-fill'),
 };
 
 const navConfig = [
@@ -56,6 +58,8 @@ const navConfig = [
     subheader: 'Finances',
     items: [
       { title: 'Dépenses', path: PATH_DASHBOARD.expenses.root, icon: ICONS.expenses },
+      { title: 'Rapports', path: PATH_DASHBOARD.reports.root, icon: ICONS.reports },
+      { title: 'Idées', path: PATH_DASHBOARD.ideas.root, icon: ICONS.ideas },
     ],
   },
   {

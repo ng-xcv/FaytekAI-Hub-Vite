@@ -51,4 +51,5 @@ export const PATH_DASHBOARD = {
   brainstorming: { root: path(ROOTS_DASHBOARD, '/brainstorming') },
   office: { root: path(ROOTS_DASHBOARD, '/office') },
   settings: { root: path(ROOTS_DASHBOARD, '/settings'), security: path(ROOTS_DASHBOARD, '/settings/security') },
+  reports: { root: path(ROOTS_DASHBOARD, '/reports') },
 };

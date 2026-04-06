@@ -33,6 +33,7 @@ const Memory = Loadable(lazy(() => import('../pages/memory/Memory')));
 const Brainstorming = Loadable(lazy(() => import('../pages/brainstorming/Brainstorming')));
 const Office = Loadable(lazy(() => import('../pages/office/Office')));
 const Settings = Loadable(lazy(() => import('../pages/settings/Settings')));
+const Reports = Loadable(lazy(() => import('../pages/reports/Reports')));
 const Page404 = Loadable(lazy(() => import('../pages/Page404')));
 
 export default function Router() {
@@ -44,42 +45,53 @@ export default function Router() {
       children: [
         { index: true, element: <Navigate to="/dashboard/home" replace /> },
         { path: 'home', element: <DashboardHome /> },
-        { path: 'tasks', children: [
-          { index: true, element: <Navigate to="/dashboard/tasks/list" replace /> },
-          { path: 'list', element: <TaskList /> },
-          { path: 'board', element: <TaskBoard /> },
-          { path: 'timeline', element: <TaskTimeline /> },
-          { path: 'calendar', element: <TaskCalendar /> },
-        ]},
-        { path: 'projects', children: [
-          { index: true, element: <Navigate to="/dashboard/projects/list" replace /> },
-          { path: 'list', element: <ProjectList /> },
-          { path: ':id', element: <ProjectDetail /> },
-        ]},
+        {
+          path: 'tasks', children: [
+            { index: true, element: <Navigate to="/dashboard/tasks/list" replace /> },
+            { path: 'list', element: <TaskList /> },
+            { path: 'board', element: <TaskBoard /> },
+            { path: 'timeline', element: <TaskTimeline /> },
+            { path: 'calendar', element: <TaskCalendar /> },
+          ],
+        },
+        {
+          path: 'projects', children: [
+            { index: true, element: <Navigate to="/dashboard/projects/list" replace /> },
+            { path: 'list', element: <ProjectList /> },
+            { path: ':id', element: <ProjectDetail /> },
+          ],
+        },
         { path: 'calendar', element: <CalendarPage /> },
         { path: 'emails', element: <EmailsInbox /> },
-        { path: 'expenses', children: [
-          { index: true, element: <Navigate to="/dashboard/expenses/list" replace /> },
-          { path: 'list', element: <ExpenseList /> },
-          { path: 'new', element: <ExpenseNewEdit /> },
-          { path: ':id/edit', element: <ExpenseNewEdit /> },
-        ]},
-        { path: 'ideas', children: [
-          { index: true, element: <Navigate to="/dashboard/ideas/list" replace /> },
-          { path: 'list', element: <IdeaList /> },
-          { path: ':id', element: <IdeaDetail /> },
-        ]},
-        { path: 'crm', children: [
-          { index: true, element: <Navigate to="/dashboard/crm/contacts" replace /> },
-          { path: 'contacts', element: <CrmContacts /> },
-          { path: 'interactions', element: <CrmInteractions /> },
-        ]},
+        {
+          path: 'expenses', children: [
+            { index: true, element: <Navigate to="/dashboard/expenses/list" replace /> },
+            { path: 'list', element: <ExpenseList /> },
+            { path: 'new', element: <ExpenseNewEdit /> },
+            { path: ':id/edit', element: <ExpenseNewEdit /> },
+          ],
+        },
+        {
+          path: 'ideas', children: [
+            { index: true, element: <Navigate to="/dashboard/ideas/list" replace /> },
+            { path: 'list', element: <IdeaList /> },
+            { path: ':id', element: <IdeaDetail /> },
+          ],
+        },
+        {
+          path: 'crm', children: [
+            { index: true, element: <Navigate to="/dashboard/crm/contacts" replace /> },
+            { path: 'contacts', element: <CrmContacts /> },
+            { path: 'interactions', element: <CrmInteractions /> },
+          ],
+        },
         { path: 'focus', element: <FocusMode /> },
         { path: 'mission-control', element: <MissionControl /> },
         { path: 'memory', element: <Memory /> },
         { path: 'brainstorming', element: <Brainstorming /> },
         { path: 'office', element: <Office /> },
         { path: 'settings', element: <Settings /> },
+        { path: 'reports', element: <Reports /> },
       ],
     },
     { path: '/', element: <Navigate to="/auth/login" replace /> },
