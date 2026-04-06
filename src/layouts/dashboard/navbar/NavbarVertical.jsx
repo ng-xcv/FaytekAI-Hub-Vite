@@ -10,13 +10,27 @@ import NavSection from './NavSection';
 import navConfig from './NavConfig';
 import { NAVBAR } from '../../../config';
 
-const RootStyle = styled('div')(({ theme }) => ({
-  [theme.breakpoints.up('lg')]: { flexShrink: 0, width: NAVBAR.DASHBOARD_WIDTH },
+const DesktopSidebar = styled('div')(({ theme }) => ({
+  display: 'none',
+  [theme.breakpoints.up('lg')]: {
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: NAVBAR.DASHBOARD_WIDTH,
+    zIndex: theme.zIndex.drawer,
+    borderRight: `1px dashed ${alpha(theme.palette.divider, 1)}`,
+    backgroundColor: theme.palette.background.default,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+  },
 }));
 
 function FaytekLogo() {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', px: 2.5, py: 2.5 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', px: 2.5, py: 2.5, flexShrink: 0 }}>
       <Box sx={{ width: 40, height: 40, borderRadius: 1.5, bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1.5, flexShrink: 0 }}>
         <Typography sx={{ fontSize: 16, fontWeight: 900, color: 'primary.contrastText', lineHeight: 1 }}>F</Typography>
       </Box>
@@ -30,7 +44,7 @@ function FaytekLogo() {
 
 function NavbarAccount({ user }) {
   return (
-    <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.5 }} spacing={1.5}>
+    <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.5, flexShrink: 0 }} spacing={1.5}>
       <Box sx={{ width: 38, height: 38, borderRadius: '50%', bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14, fontWeight: 700, color: 'primary.contrastText' }}>
         {(user?.prenom || user?.name || 'U')[0].toUpperCase()}
       </Box>
@@ -39,6 +53,29 @@ function NavbarAccount({ user }) {
         <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>{user?.role || 'Utilisateur'}</Typography>
       </Box>
     </Stack>
+  );
+}
+
+function SidebarContent({ user }) {
+  return (
+    <>
+      <FaytekLogo />
+      <Divider sx={{ borderStyle: 'dashed' }} />
+      <NavbarAccount user={user} />
+      <Divider sx={{ borderStyle: 'dashed', mb: 0.5 }} />
+      <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+        <NavSection navConfig={navConfig} />
+      </Box>
+      <Box sx={{ p: 2, flexShrink: 0 }}>
+        <Box sx={{ p: 1.5, borderRadius: 1.5, bgcolor: (t) => alpha(t.palette.primary.main, 0.06), border: (t) => `1px dashed ${alpha(t.palette.primary.main, 0.2)}` }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Icon icon="eva:flash-fill" width={14} />
+            <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600 }}>FaytekAI Hub v2.0</Typography>
+          </Stack>
+          <Typography variant="caption" display="block" sx={{ color: 'text.disabled', mt: 0.3 }}>© 2026 Faytek Solution</Typography>
+        </Box>
+      </Box>
+    </>
   );
 }
 
@@ -51,32 +88,25 @@ export default function NavbarVertical({ isOpenSidebar, onCloseSidebar }) {
     if (isOpenSidebar) onCloseSidebar();
   }, [pathname]); // eslint-disable-line
 
-  const renderContent = (
-    <Scrollbar sx={{ height: 1, '& .simplebar-content': { height: 1, display: 'flex', flexDirection: 'column' } }}>
-      <Stack spacing={0} sx={{ flexShrink: 0 }}>
-        <FaytekLogo />
-        <Divider sx={{ borderStyle: 'dashed' }} />
-        <NavbarAccount user={user} />
-        <Divider sx={{ borderStyle: 'dashed', mb: 0.5 }} />
-      </Stack>
-      <NavSection navConfig={navConfig} />
-      <Box sx={{ flexGrow: 1 }} />
-      <Box sx={{ p: 2 }}>
-        <Box sx={{ p: 1.5, borderRadius: 1.5, bgcolor: (t) => alpha(t.palette.primary.main, 0.06), border: (t) => `1px dashed ${alpha(t.palette.primary.main, 0.2)}` }}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Icon icon="eva:flash-fill" width={14} />
-            <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600 }}>FaytekAI Hub v2.0</Typography>
-          </Stack>
-          <Typography variant="caption" display="block" sx={{ color: 'text.disabled', mt: 0.3 }}>© 2026 Faytek Solution</Typography>
-        </Box>
-      </Box>
-    </Scrollbar>
-  );
-
   return (
-    <RootStyle>
-      {!isDesktop && <Drawer open={isOpenSidebar} onClose={onCloseSidebar} PaperProps={{ sx: { width: NAVBAR.DASHBOARD_WIDTH } }}>{renderContent}</Drawer>}
-      {isDesktop && <Drawer open variant="persistent" PaperProps={{ sx: { width: NAVBAR.DASHBOARD_WIDTH, borderRightStyle: 'dashed', bgcolor: 'background.default' } }}>{renderContent}</Drawer>}
-    </RootStyle>
+    <>
+      {/* Mobile: Drawer overlay */}
+      {!isDesktop && (
+        <Drawer
+          open={isOpenSidebar}
+          onClose={onCloseSidebar}
+          PaperProps={{ sx: { width: NAVBAR.DASHBOARD_WIDTH, display: 'flex', flexDirection: 'column' } }}
+        >
+          <SidebarContent user={user} />
+        </Drawer>
+      )}
+
+      {/* Desktop: sidebar fixe */}
+      {isDesktop && (
+        <DesktopSidebar>
+          <SidebarContent user={user} />
+        </DesktopSidebar>
+      )}
+    </>
   );
 }
