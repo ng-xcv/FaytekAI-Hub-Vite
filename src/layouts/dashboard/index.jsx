@@ -16,6 +16,9 @@ const MainStyle = styled('main')(({ theme }) => ({
   [theme.breakpoints.up('lg')]: {
     paddingTop: HEADER.DASHBOARD_DESKTOP_HEIGHT + 24,
     paddingBottom: HEADER.DASHBOARD_DESKTOP_HEIGHT + 24,
+    paddingLeft: 24,
+    paddingRight: 24,
+    marginLeft: NAVBAR.DASHBOARD_WIDTH,
     width: `calc(100% - ${NAVBAR.DASHBOARD_WIDTH}px)`,
   },
 }));
@@ -23,10 +26,12 @@ const MainStyle = styled('main')(({ theme }) => ({
 export default function DashboardLayout() {
   const [open, setOpen] = useState(false);
   return (
-    <Box sx={{ display: { lg: 'flex' }, minHeight: { lg: 1 } }}>
+    <Box sx={{ minHeight: '100vh' }}>
       <DashboardHeader onOpenSidebar={() => setOpen(true)} />
       <NavbarVertical isOpenSidebar={open} onCloseSidebar={() => setOpen(false)} />
-      <MainStyle><Outlet /></MainStyle>
+      <MainStyle>
+        <Outlet />
+      </MainStyle>
     </Box>
   );
 }
