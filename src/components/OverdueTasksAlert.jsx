@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSnackbar } from 'notistack';
-import { fetchTasks, clearOverdueAlert } from '../../redux/slices/taskSlice';
+import { fetchTasks, clearOverdueAlert } from '../redux/slices/taskSlice';
 
 /**
  * Composant invisible — vérifie les tâches avec deadline dépassée
