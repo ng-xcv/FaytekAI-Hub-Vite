@@ -6,6 +6,16 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
+// ─── Injecter le token à chaque requête ──────────────────────────────────────
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ─── Refresh token automatique sur 401 ───────────────────────────────────────
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -27,13 +37,20 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
       try {
-        await axiosInstance.post('/api/auth/refresh-token');
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) throw new Error('No refresh token');
+        const { data } = await axios.post(`${HOST_API}/api/auth/refresh`, { refreshToken });
+        localStorage.setItem('accessToken', data.accessToken);
+        if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
         processQueue(null);
         isRefreshing = false;
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
         isRefreshing = false;
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         window.location.href = '/auth/login';
         return Promise.reject(refreshError);
       }
