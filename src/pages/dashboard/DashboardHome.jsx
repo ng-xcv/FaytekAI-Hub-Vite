@@ -10,6 +10,14 @@ import { fetchTasks } from '../../redux/slices/taskSlice';
 import { fetchProjects } from '../../redux/slices/projectSlice';
 import { fetchExpenses } from '../../redux/slices/expenseSlice';
 
+const COLOR_MAP = {
+  primary: '#6366f1',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
+  default: '#6b7280',
+};
 const activityData = [
   { day: 'Lun', tasks: 4 },
   { day: 'Mar', tasks: 7 },
@@ -33,7 +41,7 @@ const StatCard = ({ title, value, icon, color, subtitle }) => (
               size="small"
               sx={{
                 mt: 1, fontSize: 10, height: 20,
-                bgcolor: (t) => alpha(t.palette[color]?.main || t.palette.primary.main, 0.1),
+                bgcolor: (t) => alpha(COLOR_MAP[color] || '#6366f1', 0.1),
                 color: `${color}.main`,
               }}
             />
@@ -42,7 +50,7 @@ const StatCard = ({ title, value, icon, color, subtitle }) => (
         <Box
           sx={{
             width: 48, height: 48, borderRadius: 1.5,
-            bgcolor: (t) => alpha(t.palette[color]?.main || t.palette.primary.main, 0.12),
+            bgcolor: (t) => alpha(COLOR_MAP[color] || '#6366f1', 0.12),
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
