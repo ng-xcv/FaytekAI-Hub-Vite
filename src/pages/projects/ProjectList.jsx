@@ -13,22 +13,22 @@ import { useForm, Controller } from 'react-hook-form';
 import { fetchProjects, createProject } from '../../redux/slices/projectSlice';
 
 const STATUS_CONFIG = {
-  active: { label: 'Actif', color: 'success' },
-  on_hold: { label: 'En pause', color: 'warning' },
-  completed: { label: 'Terminé', color: 'info' },
-  cancelled: { label: 'Annulé', color: 'error' },
+  actif:     { label: 'Actif',     color: 'success' },
+  en_pause:  { label: 'En pause',  color: 'warning' },
+  termine:   { label: 'Terminé',   color: 'info'    },
+  archive:   { label: 'Archivé',   color: 'error'   },
 };
 
 function ProjectFormDialog({ open, onClose }) {
   const dispatch = useDispatch();
   const { register, handleSubmit, reset, control } = useForm({
-    defaultValues: { name: '', description: '', status: 'active', budget: '' },
+    defaultValues: { nom: '', description: '', statut: 'actif', couleur: '#4f46e5' },
   });
 
   useEffect(() => { if (open) reset(); }, [open, reset]);
 
-  const onSubmit = async (data) => {
-    await dispatch(createProject({ ...data, budget: data.budget ? Number(data.budget) : undefined }));
+  const onSubmit = async (formData) => {
+    await dispatch(createProject(formData));
     onClose();
   };
 
@@ -38,13 +38,13 @@ function ProjectFormDialog({ open, onClose }) {
         <DialogTitle sx={{ fontWeight: 700 }}>Nouveau Projet</DialogTitle>
         <DialogContent>
           <Stack spacing={2.5} sx={{ mt: 1 }}>
-            <TextField {...register('name')} label="Nom du projet" fullWidth required autoFocus />
+            <TextField {...register('nom')} label="Nom du projet" fullWidth required autoFocus />
             <TextField {...register('description')} label="Description" fullWidth multiline rows={3} />
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth>
                 <InputLabel>Statut</InputLabel>
                 <Controller
-                  name="status"
+                  name="statut"
                   control={control}
                   render={({ field }) => (
                     <Select {...field} label="Statut">
@@ -55,13 +55,15 @@ function ProjectFormDialog({ open, onClose }) {
                   )}
                 />
               </FormControl>
-              <TextField {...register('budget')} label="Budget (XOF)" type="number" fullWidth />
+              <TextField {...register('couleur')} label="Couleur" type="color" fullWidth />
             </Stack>
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={onClose} variant="outlined">Annuler</Button>
-          <Button type="submit" variant="contained" sx={{ borderRadius: 1.5, fontWeight: 700 }}>Créer</Button>
+          <Button type="submit" variant="contained" sx={{ borderRadius: 1.5, fontWeight: 700 }}>
+            Créer
+          </Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -93,7 +95,9 @@ export default function ProjectList() {
       </Stack>
 
       {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
       ) : projects.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Icon icon="eva:folder-outline" width={56} style={{ opacity: 0.3 }} />
@@ -101,11 +105,16 @@ export default function ProjectList() {
         </Box>
       ) : (
         <Grid container spacing={3}>
-          {projects.map((project) => {
-            const cfg = STATUS_CONFIG[project.status] || { label: project.status || 'actif', color: 'default' };
-            const progress = project.progress || 0;
+          {projects.map((projet) => {
+            const cfg = STATUS_CONFIG[projet.statut] || { label: projet.statut || 'actif', color: 'default' };
+            const progression = projet.progression || 0;
+            const proprietaire = projet.proprietaire;
+            const nomProprietaire = proprietaire
+              ? `${proprietaire.prenom || ''} ${proprietaire.nom || ''}`.trim() || proprietaire.email
+              : null;
+
             return (
-              <Grid key={project._id} size={{ xs: 12, sm: 6, md: 4 }}>
+              <Grid key={projet._id} size={{ xs: 12, sm: 6, md: 4 }}>
                 <Card
                   elevation={0}
                   sx={{
@@ -116,60 +125,83 @@ export default function ProjectList() {
                     '&:hover': { boxShadow: '0 8px 24px rgba(0,0,0,0.12)', transform: 'translateY(-2px)' },
                   }}
                 >
-                  <CardActionArea onClick={() => navigate(`/dashboard/projects/${project._id}`)} sx={{ height: '100%', borderRadius: 2 }}>
+                  <CardActionArea
+                    onClick={() => navigate(`/dashboard/projects/${projet._id}`)}
+                    sx={{ height: '100%', borderRadius: 2 }}
+                  >
                     <CardContent sx={{ height: '100%' }}>
                       <Stack spacing={2}>
                         <Stack direction="row" alignItems="flex-start" justifyContent="space-between">
                           <Box
                             sx={{
                               width: 44, height: 44, borderRadius: 1.5,
-                              bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
+                              bgcolor: projet.couleur ? alpha(projet.couleur, 0.18) : (t) => alpha(t.palette.primary.main, 0.12),
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}
                           >
-                            <Icon icon="eva:folder-fill" width={22} />
+                            <Icon icon="eva:folder-fill" width={22} color={projet.couleur || undefined} />
                           </Box>
                           <Chip label={cfg.label} size="small" color={cfg.color} sx={{ height: 22, fontSize: 11 }} />
                         </Stack>
 
                         <Box>
                           <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }} noWrap>
-                            {project.name}
+                            {projet.nom}
                           </Typography>
-                          {project.description && (
-                            <Typography variant="body2" sx={{ color: 'text.secondary', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                              {project.description}
+                          {projet.description && (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: 'text.secondary',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {projet.description}
                             </Typography>
                           )}
                         </Box>
 
-                        {progress > 0 && (
+                        {progression > 0 && (
                           <Box>
                             <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
                               <Typography variant="caption" sx={{ color: 'text.secondary' }}>Progression</Typography>
-                              <Typography variant="caption" sx={{ fontWeight: 700 }}>{progress}%</Typography>
+                              <Typography variant="caption" sx={{ fontWeight: 700 }}>{progression}%</Typography>
                             </Stack>
                             <LinearProgress
                               variant="determinate"
-                              value={progress}
-                              sx={{ height: 6, borderRadius: 3, bgcolor: (t) => alpha(t.palette.primary.main, 0.12) }}
+                              value={progression}
+                              sx={{
+                                height: 6,
+                                borderRadius: 3,
+                                bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
+                              }}
                             />
                           </Box>
                         )}
 
                         <Stack direction="row" alignItems="center" justifyContent="space-between">
-                          {project.budget && (
+                          {nomProprietaire && (
                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              {Number(project.budget).toLocaleString('fr-FR')} XOF
+                              {nomProprietaire}
                             </Typography>
                           )}
-                          {project.members && project.members.length > 0 && (
-                            <AvatarGroup max={3} sx={{ '& .MuiAvatar-root': { width: 24, height: 24, fontSize: 11 } }}>
-                              {project.members.map((m, i) => (
-                                <Avatar key={i} alt={m.name || m} sx={{ width: 24, height: 24 }}>
-                                  {(m.name || m)?.[0]?.toUpperCase()}
-                                </Avatar>
-                              ))}
+                          {projet.membres && projet.membres.length > 0 && (
+                            <AvatarGroup
+                              max={3}
+                              sx={{ '& .MuiAvatar-root': { width: 24, height: 24, fontSize: 11 } }}
+                            >
+                              {projet.membres.map((m, i) => {
+                                const u = m.user || m;
+                                const label = u?.prenom || u?.nom || u?.email || (typeof u === 'string' ? u : '?');
+                                return (
+                                  <Avatar key={i} alt={label} sx={{ width: 24, height: 24 }}>
+                                    {label[0]?.toUpperCase()}
+                                  </Avatar>
+                                );
+                              })}
                             </AvatarGroup>
                           )}
                         </Stack>
