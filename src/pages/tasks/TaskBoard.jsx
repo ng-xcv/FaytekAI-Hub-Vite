@@ -84,7 +84,7 @@ function BoardColumn({ column, tasks, onAddTask }) {
         flex: 1,
         minWidth: 240,
         maxWidth: 320,
-        bgcolor: (t) => alpha(t.palette.grey[500], 0.05),
+        bgcolor: alpha('#6b7280', 0.05),
         border: (t) => `1px solid ${alpha(t.palette.divider, 0.4)}`,
         borderRadius: 2,
         display: 'flex',
