@@ -32,7 +32,7 @@ function MessageBubble({ message }) {
           borderTopRightRadius: isUser ? 0.5 : 2,
           bgcolor: isUser
             ? 'primary.main'
-            : (t) => alpha(t.palette.grey[500], 0.1),
+            : alpha('#6b7280', 0.1),
           color: isUser ? 'common.white' : 'text.primary',
         }}
       >
@@ -137,7 +137,7 @@ export default function Brainstorming() {
             {loading && (
               <Stack direction="row" spacing={1.5} alignItems="center">
                 <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 16 }}>🤖</Avatar>
-                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.grey[500], 0.1) }}>
+                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha('#6b7280', 0.1) }}>
                   <Stack direction="row" spacing={0.5} alignItems="center">
                     <CircularProgress size={14} />
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>En train de réfléchir...</Typography>
