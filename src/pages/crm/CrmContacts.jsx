@@ -15,6 +15,13 @@ import {
   fetchContactInteractions, createInteraction, fetchCRMStats
 } from '../../redux/slices/crmSlice';
 
+const SECTEURS = [
+  'Comptabilité', 'BTP', 'Immobilier', 'Logistique', 'Tech',
+  'Commerce', 'Santé', 'Éducation', 'Agriculture', 'Finance',
+  'Industrie', 'Transport', 'Tourisme', 'Médias', 'Autre'
+];
+
+
 const STATUT_COLORS = {
   prospect: 'default',
   contact: 'secondary',
@@ -28,7 +35,7 @@ const TYPES_INTERACTION = ['email', 'appel', 'reunion', 'note'];
 
 const defaultContactForm = {
   nom: '', prenom: '', email: '', telephone: '',
-  entreprise: '', pays: 'Sénégal', statutPipeline: 'prospect', notes: ''
+  entreprise: '', secteur: 'Autre', pays: 'Sénégal', statutPipeline: 'prospect', notes: ''
 };
 
 const defaultInteractionForm = {
@@ -87,7 +94,7 @@ export default function CrmContacts() {
     setContactForm({
       nom: contact.nom || '', prenom: contact.prenom || '',
       email: contact.email || '', telephone: contact.telephone || '',
-      entreprise: contact.entreprise || '', pays: contact.pays || 'Sénégal',
+      entreprise: contact.entreprise || '', secteur: contact.secteur || 'Autre', pays: contact.pays || 'Sénégal',
       statutPipeline: contact.statutPipeline || 'prospect', notes: contact.notes || ''
     });
     setDialogOpen(true);
@@ -240,6 +247,7 @@ export default function CrmContacts() {
               <TableCell>Email</TableCell>
               <TableCell>Téléphone</TableCell>
               <TableCell>Entreprise</TableCell>
+                <TableCell>Secteur</TableCell>
               <TableCell>Statut</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
@@ -257,6 +265,7 @@ export default function CrmContacts() {
                 <TableCell>{contact.email}</TableCell>
                 <TableCell>{contact.telephone}</TableCell>
                 <TableCell>{contact.entreprise}</TableCell>
+                  <TableCell>{contact.secteur || '—'}</TableCell>
                 <TableCell>
                   <Chip
                     label={contact.statutPipeline}
@@ -330,6 +339,16 @@ export default function CrmContacts() {
             />
             <TextField
               label="Pays"
+              value={contactForm.secteur || 'Autre'}
+              onChange={e => setContactForm(f => ({ ...f, secteur: e.target.value }))}
+              select
+              label="Secteur"
+            >
+              {SECTEURS.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+            </TextField>
+            <TextField
+              fullWidth size="small"
+              label="Pays"
               value={contactForm.pays}
               onChange={e => setContactForm(f => ({ ...f, pays: e.target.value }))}
               fullWidth size="small"
@@ -380,7 +399,8 @@ export default function CrmContacts() {
               <Typography variant="body2"><strong>Email :</strong> {selectedContact.email || '—'}</Typography>
               <Typography variant="body2"><strong>Téléphone :</strong> {selectedContact.telephone || '—'}</Typography>
               <Typography variant="body2"><strong>Entreprise :</strong> {selectedContact.entreprise || '—'}</Typography>
-              <Typography variant="body2"><strong>Pays :</strong> {selectedContact.pays}</Typography>
+              <Typography variant="body2"><strong>Secteur :</strong> {selectedContact.secteur || '—'}</Typography>
+            <Typography variant="body2"><strong>Pays :</strong> {selectedContact.pays}</Typography>
               <Typography variant="body2">
                 <strong>Statut :</strong>{' '}
                 <Chip label={selectedContact.statutPipeline} color={STATUT_COLORS[selectedContact.statutPipeline]} size="small" />
