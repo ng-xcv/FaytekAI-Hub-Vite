@@ -71,7 +71,7 @@ export default function TaskTimeline() {
           sx={{ border: (t) => `1px solid ${alpha(t.palette.divider, 0.5)}`, borderRadius: 2, overflow: 'hidden' }}
         >
           {/* Header: dates */}
-          <Box sx={{ display: 'flex', borderBottom: (t) => `1px solid ${alpha(t.palette.divider, 0.5)}`, bgcolor: (t) => alpha(t.palette.grey[500], 0.05) }}>
+          <Box sx={{ display: 'flex', borderBottom: (t) => `1px solid ${alpha(t.palette.divider, 0.5)}`, bgcolor: alpha('#6b7280', 0.05) }}>
             <Box sx={{ width: 240, flexShrink: 0, borderRight: (t) => `1px solid ${alpha(t.palette.divider, 0.4)}`, p: 1.5 }}>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>
                 Tâche
@@ -116,7 +116,7 @@ export default function TaskTimeline() {
                     display: 'flex',
                     borderBottom: (t) => `1px solid ${alpha(t.palette.divider, 0.3)}`,
                     '&:last-child': { borderBottom: 'none' },
-                    '&:hover': { bgcolor: (t) => alpha(t.palette.grey[500], 0.04) },
+                    '&:hover': { bgcolor: alpha('#6b7280', 0.04) },
                   }}
                 >
                   <Box
