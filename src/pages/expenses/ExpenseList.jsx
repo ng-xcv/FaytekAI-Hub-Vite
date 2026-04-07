@@ -5,6 +5,7 @@ import {
   Box, Typography, Stack, Card, CardContent, Button, TextField, InputAdornment,
   Select, MenuItem, Chip, IconButton, CircularProgress, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper, Alert, Badge, Collapse,
+  Divider, LinearProgress,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { Icon } from '@iconify/react';
@@ -17,6 +18,7 @@ import {
   fetchAlertes,
   marquerAlerteLue,
 } from '../../redux/slices/expenseSlice';
+import axiosInstance from '../../utils/axios';
 
 const COLOR_MAP = {
   primary: '#6366f1',
@@ -26,7 +28,6 @@ const COLOR_MAP = {
   info: '#3b82f6',
   default: '#6b7280',
 };
-
 
 const CATEGORY_LABELS = {
   transport: 'Transport', restauration: 'Restauration', hebergement: 'Hébergement',
@@ -40,19 +41,69 @@ const getCurrentMonthFilter = () => {
   return { mois: now.getMonth() + 1, annee: now.getFullYear() };
 };
 
+// Calcul des jours restants avant la date de renouvellement
+const getDaysUntil = (dateStr) => {
+  if (!dateStr) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+};
+
+// Couleur selon jours restants
+const getRenewalColor = (days) => {
+  if (days === null) return 'default';
+  if (days <= 5) return 'error';
+  if (days <= 10) return 'warning';
+  return 'success';
+};
+
+const RECURRENCE_LABELS = {
+  mensuelle: 'Mensuelle',
+  trimestrielle: 'Trimestrielle',
+  annuelle: 'Annuelle',
+  hebdomadaire: 'Hebdomadaire',
+};
+
 export default function ExpenseList() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { list: expenses, isLoading, totalAmount, stats, alertes } = useSelector((s) => s.expense);
   const [filterCat, setFilterCat] = useState('all');
   const [showAlertes, setShowAlertes] = useState(true);
+  const [recurrentes, setRecurrentes] = useState([]);
+  const [recurrentesLoading, setRecurrentesLoading] = useState(false);
+  const [showRecurrentesAlert, setShowRecurrentesAlert] = useState(true);
   const { mois, annee } = getCurrentMonthFilter();
 
   useEffect(() => {
     dispatch(fetchExpenses({ mois, annee }));
     dispatch(fetchExpenseStats({ mois, annee }));
     dispatch(fetchAlertes());
+    fetchRecurrentes();
   }, [dispatch, mois, annee]);
+
+  const fetchRecurrentes = async () => {
+    try {
+      setRecurrentesLoading(true);
+      const res = await axiosInstance.get('/api/depense-recurrente');
+      setRecurrentes(res.data?.data || res.data || []);
+    } catch (err) {
+      console.error('Erreur chargement dépenses récurrentes:', err);
+    } finally {
+      setRecurrentesLoading(false);
+    }
+  };
+
+  // Récurrentes échéant dans les 10 prochains jours
+  const recurrentesUrgentes = recurrentes.filter((r) => {
+    const days = getDaysUntil(r.dateRenouvellement);
+    return days !== null && days <= 10 && days >= 0;
+  });
+
+  // Total mensuel des charges fixes
+  const totalChargesFixes = recurrentes.reduce((sum, r) => sum + (r.depenseId?.montant || r.montant || 0), 0);
 
   const filtered = expenses.filter((e) => {
     return filterCat === 'all' || e.categorie === filterCat;
@@ -106,7 +157,7 @@ export default function ExpenseList() {
         </Stack>
       </Stack>
 
-      {/* Alertes banner */}
+      {/* Alertes banner (alertes générales) */}
       <Collapse in={showAlertes && alertes.length > 0}>
         <Stack spacing={1} sx={{ mb: 3 }}>
           {alertes.map((alerte) => (
@@ -130,6 +181,106 @@ export default function ExpenseList() {
           ))}
         </Stack>
       </Collapse>
+
+      {/* Banner alertes charges récurrentes urgentes */}
+      <Collapse in={showRecurrentesAlert && recurrentesUrgentes.length > 0}>
+        <Alert
+          severity="error"
+          icon={<Icon icon="eva:alert-triangle-fill" />}
+          onClose={() => setShowRecurrentesAlert(false)}
+          sx={{ mb: 3, borderRadius: 2 }}
+        >
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+            ⚠️ {recurrentesUrgentes.length} charge{recurrentesUrgentes.length > 1 ? 's' : ''} fixe{recurrentesUrgentes.length > 1 ? 's' : ''} à renouveler dans les 10 prochains jours
+          </Typography>
+          <Typography variant="body2">
+            {recurrentesUrgentes.map((r) => {
+              const days = getDaysUntil(r.dateRenouvellement);
+              const desc = r.depenseId?.description || r.description || 'Sans titre';
+              return `${desc} (${days === 0 ? "aujourd'hui" : `dans ${days}j`})`;
+            }).join(' · ')}
+          </Typography>
+        </Alert>
+      </Collapse>
+
+      {/* Section Charges fixes du mois */}
+      <Card
+        elevation={0}
+        sx={{ mb: 3, border: (t) => `1px solid ${alpha(t.palette.divider, 0.5)}`, borderRadius: 2 }}
+      >
+        <CardContent>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Icon icon="eva:repeat-fill" width={20} style={{ color: '#6366f1' }} />
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>Charges fixes du mois</Typography>
+            </Stack>
+            <Chip
+              label={`Total : ${totalChargesFixes.toLocaleString('fr-FR')} XOF`}
+              color="primary"
+              variant="outlined"
+              sx={{ fontWeight: 700 }}
+            />
+          </Stack>
+
+          {recurrentesLoading ? (
+            <LinearProgress sx={{ borderRadius: 1 }} />
+          ) : recurrentes.length === 0 ? (
+            <Typography variant="body2" sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}>
+              Aucune charge récurrente configurée
+            </Typography>
+          ) : (
+            <Stack spacing={1}>
+              {recurrentes.map((r, idx) => {
+                const desc = r.depenseId?.description || r.description || 'Sans titre';
+                const montant = r.depenseId?.montant || r.montant || 0;
+                const typeRecurrence = r.typeRecurrence || r.periodicite || '—';
+                const dateRenouv = r.dateRenouvellement;
+                const days = getDaysUntil(dateRenouv);
+                const renewColor = getRenewalColor(days);
+
+                return (
+                  <Box
+                    key={r._id || idx}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      p: 1.5,
+                      borderRadius: 1.5,
+                      bgcolor: (t) => alpha(t.palette.grey[500], 0.04),
+                      border: (t) => `1px solid ${alpha(t.palette.divider, 0.3)}`,
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ flex: 1 }}>
+                      <Icon icon="eva:refresh-fill" width={16} style={{ color: '#6366f1', flexShrink: 0 }} />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{desc}</Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          {RECURRENCE_LABELS[typeRecurrence] || typeRecurrence}
+                          {dateRenouv && ` · Renouvellement : ${new Date(dateRenouv).toLocaleDateString('fr-FR')}`}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      {days !== null && (
+                        <Chip
+                          label={days === 0 ? "Aujourd'hui" : days < 0 ? `${Math.abs(days)}j dépassé` : `${days}j`}
+                          size="small"
+                          color={renewColor}
+                          sx={{ height: 22, fontSize: 11, fontWeight: 700 }}
+                        />
+                      )}
+                      <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 100, textAlign: 'right' }}>
+                        {montant.toLocaleString('fr-FR')} XOF
+                      </Typography>
+                    </Stack>
+                  </Box>
+                );
+              })}
+            </Stack>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Stats Row */}
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
