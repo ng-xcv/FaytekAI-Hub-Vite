@@ -612,7 +612,7 @@ export default function Office() {
         <Grid container spacing={2}>
           <AnimatePresence>
             {agents.map((agent) => (
-              <Grid item xs={12} sm={6} md={6} lg={3} key={agent.agentId}>
+              <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }} key={agent.agentId}>
                 <AgentCard
                   agent={agent}
                   onSelect={(a) => {
