@@ -152,26 +152,26 @@ export default function CrmContacts() {
       {/* Stats pipeline */}
       {stats && (
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={4}>
+          <Grid size={{ xs: 12, sm: 4 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="primary" fontWeight={700}>{stats.totalContacts}</Typography>
               <Typography variant="body2" color="text.secondary">Total contacts</Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid size={{ xs: 12, sm: 4 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="success.main" fontWeight={700}>{stats.tauxConversion}%</Typography>
               <Typography variant="body2" color="text.secondary">Taux de conversion</Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid size={{ xs: 12, sm: 4 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="secondary.main" fontWeight={700}>{stats.recentInteractions}</Typography>
               <Typography variant="body2" color="text.secondary">Interactions (30j)</Typography>
             </Paper>
           </Grid>
           {/* Pipeline bar */}
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Paper sx={{ p: 2 }}>
               <Typography variant="subtitle2" gutterBottom>Pipeline</Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap">
