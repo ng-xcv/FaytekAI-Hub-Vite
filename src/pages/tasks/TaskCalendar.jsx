@@ -106,7 +106,7 @@ export default function TaskCalendar() {
                       bgcolor: !date
                         ? (t) => alpha(t.palette.grey[500], 0.06)
                         : isToday(date)
-                        ? (t) => alpha(t.palette.primary.main, 0.06)
+                        ? alpha('#6366f1', 0.06)
                         : 'background.paper',
                     }}
                   >
