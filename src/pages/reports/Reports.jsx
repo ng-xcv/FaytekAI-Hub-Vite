@@ -1,5 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
+const COLOR_MAP = {
+  primary: '#6366f1',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
+  default: '#6b7280',
+};
   Box, Typography, Stack, Card, CardContent, Grid, Button, Chip, CircularProgress,
   Divider, Alert, Tooltip as MuiTooltip,
 } from '@mui/material';
@@ -35,7 +43,7 @@ function StatCard({ title, value, icon, color }) {
           </Box>
           <Box sx={{
             width: 44, height: 44, borderRadius: 1.5,
-            bgcolor: (t) => alpha(t.palette[color]?.main || t.palette.primary.main, 0.12),
+            bgcolor: (t) => alpha(COLOR_MAP[color] || '#6366f1', 0.12),
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <Icon icon={icon} width={22} />
