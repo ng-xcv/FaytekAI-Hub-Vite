@@ -12,6 +12,14 @@ import axiosInstance from '../../utils/axios';
 import { fetchTasks } from '../../redux/slices/taskSlice';
 
 // ─── Configs ────────────────────────────────────────────────────────────────
+const COLOR_MAP = {
+  primary: '#6366f1',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
+  default: '#6b7280',
+};
 
 const STATUS_CONFIG = {
   actif:    { label: 'Actif',    color: 'success' },
@@ -326,7 +334,7 @@ export default function ProjectDetail() {
                   <Box
                     sx={{
                       width: 40, height: 40, borderRadius: 1.5,
-                      bgcolor: (t) => alpha(t.palette[s.color].main, 0.12),
+                      bgcolor: (t) => alpha(COLOR_MAP[s.color] || '#6366f1', 0.12),
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
                   >
