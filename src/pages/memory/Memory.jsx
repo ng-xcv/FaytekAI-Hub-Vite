@@ -22,7 +22,7 @@ function MemoryCard({ entry, selected, onClick }) {
       elevation={0}
       onClick={onClick}
       sx={{
-        border: (t) => `1px solid ${selected ? t.palette.primary.main : alpha(t.palette.divider, 0.5)}`,
+        border: (t) => `1px solid ${selected ? '#6366f1' : alpha(t.palette.divider, 0.5)}`,
         borderRadius: 1.5,
         cursor: 'pointer',
         bgcolor: selected ? alpha('#6366f1', 0.05) : 'background.paper',
