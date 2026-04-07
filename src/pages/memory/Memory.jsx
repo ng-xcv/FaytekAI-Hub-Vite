@@ -25,7 +25,7 @@ function MemoryCard({ entry, selected, onClick }) {
         border: (t) => `1px solid ${selected ? t.palette.primary.main : alpha(t.palette.divider, 0.5)}`,
         borderRadius: 1.5,
         cursor: 'pointer',
-        bgcolor: selected ? (t) => alpha(t.palette.primary.main, 0.05) : 'background.paper',
+        bgcolor: selected ? alpha('#6366f1', 0.05) : 'background.paper',
         '&:hover': { borderColor: 'primary.light' },
       }}
     >
