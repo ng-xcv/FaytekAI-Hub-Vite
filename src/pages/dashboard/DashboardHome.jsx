@@ -152,7 +152,7 @@ export default function DashboardHome() {
                 <LinearProgress
                   variant="determinate"
                   value={progressPct}
-                  sx={{ height: 8, borderRadius: 4, bgcolor: (t) => alpha(t.palette.primary.main, 0.12) }}
+                  sx={{ height: 8, borderRadius: 4, bgcolor: (t) => alpha('#6366f1', 0.12) }}
                 />
                 <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1, display: 'block' }}>
                   {doneTasks} / {totalTasks} tâches
@@ -234,7 +234,7 @@ export default function DashboardHome() {
                         size="small"
                         sx={{
                           fontSize: 10, height: 20,
-                          bgcolor: (t) => alpha(t.palette.success.main, 0.1),
+                          bgcolor: (t) => alpha('#22c55e', 0.1),
                           color: 'success.main',
                         }}
                       />
