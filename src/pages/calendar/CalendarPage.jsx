@@ -1,240 +1,551 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSnackbar } from 'notistack';
 import {
-  Box, Typography, Stack, Button, Chip, Paper, IconButton, Card, CardContent,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField, CircularProgress,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Tooltip,
+  Typography,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 import { Icon } from '@iconify/react';
-import { motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { fetchEvents, addEvent } from '../../redux/slices/calendarSlice';
-import axiosInstance from '../../utils/axios';
+import {
+  fetchEvents,
+  createEvent,
+  deleteEvent,
+  syncOutlook,
+} from '../../redux/slices/calendarSlice';
 
-const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-
-const EVENT_COLORS = {
-  meeting: 'info', deadline: 'error', reminder: 'warning', personal: 'success', other: 'default',
+// ── Configuration types ───────────────────────────────────────────────────────
+const TYPE_CONFIG = {
+  reunion:   { label: 'Réunion',   color: 'info',    icon: 'mdi:account-group' },
+  deadline:  { label: 'Deadline',  color: 'error',   icon: 'mdi:flag' },
+  rappel:    { label: 'Rappel',    color: 'warning', icon: 'mdi:bell' },
+  personnel: { label: 'Personnel', color: 'success', icon: 'mdi:account' },
+  outlook:   { label: 'Outlook',   color: 'primary', icon: 'mdi:microsoft-outlook' },
 };
 
-function EventFormDialog({ open, onClose, selectedDate }) {
-  const dispatch = useDispatch();
-  const { register, handleSubmit, reset } = useForm({
-    defaultValues: { title: '', description: '', type: 'other', start: '' },
+const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+
+const MOIS_LABELS = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('fr-FR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
   });
+}
 
-  useEffect(() => {
-    if (open) reset({ title: '', description: '', type: 'other', start: selectedDate ? selectedDate.toISOString().split('T')[0] : '' });
-  }, [open, selectedDate, reset]);
+function isSameDay(isoDate, year, month, day) {
+  const d = new Date(isoDate);
+  return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+}
 
-  const onSubmit = async (data) => {
-    try {
-      const { data: resp } = await axiosInstance.post('/api/calendar/events', data);
-      dispatch(addEvent(resp.event || resp));
-    } catch (e) {
-      dispatch(addEvent({ ...data, id: Date.now().toString(), _id: Date.now().toString() }));
-    }
-    onClose();
+function getCalendarDays(year, month) {
+  // First day of month (Monday=0 … Sunday=6)
+  const firstDay = new Date(year, month, 1);
+  let startOffset = firstDay.getDay() - 1; // getDay: 0=Sun, 1=Mon…
+  if (startOffset < 0) startOffset = 6;   // Sunday → put at end
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [];
+
+  // Padding before
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  // Pad to full weeks
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  return cells;
+}
+
+// ── Default form state ────────────────────────────────────────────────────────
+function defaultForm(selectedDate) {
+  const now = selectedDate
+    ? new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 9, 0)
+    : new Date();
+  const end = new Date(now.getTime() + 60 * 60 * 1000);
+
+  const toLocal = (d) => {
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
+  return {
+    titre: '',
+    dateDebut: toLocal(now),
+    dateFin: toLocal(end),
+    description: '',
+    type: 'reunion',
+    workspace: 'bureau',
+    lieu: '',
+  };
+}
+
+// ── EventChip ─────────────────────────────────────────────────────────────────
+function EventChip({ event, onClick }) {
+  const cfg = TYPE_CONFIG[event.type] || TYPE_CONFIG.reunion;
+  const isOutlook = event.syncSource === 'outlook' || !!event.outlookEventId;
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <DialogTitle sx={{ fontWeight: 700 }}>Nouvel événement</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2.5} sx={{ mt: 1 }}>
-            <TextField {...register('title')} label="Titre" fullWidth required autoFocus />
-            <TextField {...register('description')} label="Description" fullWidth multiline rows={2} />
-            <TextField {...register('start')} label="Date/Heure" type="datetime-local" fullWidth InputLabelProps={{ shrink: true }} />
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={onClose} variant="outlined">Annuler</Button>
-          <Button type="submit" variant="contained" sx={{ borderRadius: 1.5, fontWeight: 700 }}>Créer</Button>
-        </DialogActions>
-      </form>
-    </Dialog>
+    <Tooltip title={event.titre} arrow>
+      <Chip
+        size="small"
+        color={cfg.color}
+        icon={<Icon icon={cfg.icon} width={12} />}
+        label={
+          <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <span style={{ maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>
+              {event.titre}
+            </span>
+            {isOutlook && (
+              <Icon icon="mdi:microsoft-outlook" width={10} style={{ flexShrink: 0 }} />
+            )}
+          </Box>
+        }
+        onClick={(e) => { e.stopPropagation(); onClick(event); }}
+        sx={{ mb: 0.25, cursor: 'pointer', maxWidth: '100%' }}
+      />
+    </Tooltip>
   );
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
 export default function CalendarPage() {
   const dispatch = useDispatch();
-  const { events, isLoading } = useSelector((s) => s.calendar);
+  const { enqueueSnackbar } = useSnackbar();
+  const { events, isLoading, isSyncing } = useSelector((s) => s.calendar);
+
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedDay, setSelectedDay] = useState(null);
+  const [openForm, setOpenForm] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [form, setForm] = useState(defaultForm(null));
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const cells = getCalendarDays(year, month);
+
+  // ── Load events on month change ──────────────────────────────────────────
   useEffect(() => {
-    dispatch(fetchEvents({}));
-  }, [dispatch]);
+    const debut = new Date(year, month, 1).toISOString();
+    const fin = new Date(year, month + 1, 0, 23, 59).toISOString();
+    dispatch(fetchEvents({ debut, fin }));
+  }, [dispatch, currentDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { month, year, days } = useMemo(() => {
-    const m = currentDate.getMonth();
-    const y = currentDate.getFullYear();
-    const firstDay = new Date(y, m, 1);
-    const lastDay = new Date(y, m + 1, 0);
-    let startDow = firstDay.getDay() - 1;
-    if (startDow < 0) startDow = 6;
-    const arr = [];
-    for (let i = 0; i < startDow; i++) arr.push(null);
-    for (let d = 1; d <= lastDay.getDate(); d++) arr.push(new Date(y, m, d));
-    return { month: m, year: y, days: arr };
-  }, [currentDate]);
+  // ── Navigation ───────────────────────────────────────────────────────────
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  const goToday = () => setCurrentDate(new Date());
 
-  const monthName = currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-
-  const getEventsForDate = (date) => {
-    if (!date) return [];
-    return events.filter((ev) => {
-      const s = ev.start || ev.date || ev.startDate;
-      if (!s) return false;
-      return new Date(s).toDateString() === date.toDateString();
-    });
+  // ── Sync Outlook ─────────────────────────────────────────────────────────
+  const handleSyncOutlook = async () => {
+    try {
+      await dispatch(syncOutlook()).unwrap();
+      enqueueSnackbar('Calendrier Outlook synchronisé', { variant: 'success' });
+      const debut = new Date(year, month, 1).toISOString();
+      const fin = new Date(year, month + 1, 0, 23, 59).toISOString();
+      dispatch(fetchEvents({ debut, fin }));
+    } catch {
+      enqueueSnackbar('Sync Outlook échouée — vérifier la connexion MS365', { variant: 'error' });
+    }
   };
 
-  const isToday = (date) => date && new Date().toDateString() === date.toDateString();
+  // ── Open form ─────────────────────────────────────────────────────────────
+  const handleOpenForm = (day = null) => {
+    const date = day ? new Date(year, month, day) : null;
+    setSelectedDate(date);
+    setForm(defaultForm(date));
+    setOpenForm(true);
+  };
 
-  const dayEvents = selectedDay ? getEventsForDate(selectedDay) : [];
+  const handleCloseForm = () => {
+    setOpenForm(false);
+    setSelectedDate(null);
+  };
+
+  // ── Submit create ─────────────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    if (!form.titre.trim()) {
+      enqueueSnackbar('Le titre est requis', { variant: 'warning' });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await dispatch(createEvent({
+        titre: form.titre.trim(),
+        dateDebut: new Date(form.dateDebut).toISOString(),
+        dateFin: new Date(form.dateFin).toISOString(),
+        description: form.description,
+        type: form.type,
+        workspace: form.workspace,
+        lieu: form.lieu,
+      })).unwrap();
+      enqueueSnackbar('Événement créé', { variant: 'success' });
+      handleCloseForm();
+    } catch {
+      enqueueSnackbar('Erreur lors de la création', { variant: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ── Delete event ──────────────────────────────────────────────────────────
+  const handleDelete = async (id) => {
+    setDeleting(true);
+    try {
+      await dispatch(deleteEvent(id)).unwrap();
+      enqueueSnackbar('Événement supprimé', { variant: 'success' });
+      setSelectedEvent(null);
+    } catch {
+      enqueueSnackbar('Erreur lors de la suppression', { variant: 'error' });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  const today = new Date();
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800 }}>Calendrier</Typography>
+    <Box sx={{ p: { xs: 1, md: 3 } }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+        <Typography variant="h5" fontWeight={700} sx={{ flexGrow: 1 }}>
+          📅 Calendrier
+        </Typography>
+
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<Icon icon="mdi:calendar-today" />}
+          onClick={goToday}
+        >
+          Aujourd'hui
+        </Button>
+
+        <Button
+          variant="outlined"
+          color="primary"
+          size="small"
+          startIcon={isSyncing ? <CircularProgress size={14} /> : <Icon icon="mdi:microsoft-outlook" />}
+          onClick={handleSyncOutlook}
+          disabled={isSyncing}
+        >
+          {isSyncing ? 'Sync…' : 'Sync Outlook'}
+        </Button>
+
         <Button
           variant="contained"
-          startIcon={<Icon icon="eva:plus-fill" />}
-          onClick={() => { setSelectedDate(null); setDialogOpen(true); }}
-          sx={{ borderRadius: 1.5, fontWeight: 700 }}
+          size="small"
+          startIcon={<Icon icon="mdi:plus" />}
+          onClick={() => handleOpenForm()}
         >
-          Nouvel événement
+          + Événement
         </Button>
-      </Stack>
+      </Box>
 
-      <Paper elevation={0} sx={{ border: (t) => `1px solid ${alpha(t.palette.divider, 0.5)}`, borderRadius: 2, overflow: 'hidden' }}>
-        {/* Nav Header */}
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ p: 2, borderBottom: (t) => `1px solid ${alpha(t.palette.divider, 0.4)}` }}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <IconButton size="small" onClick={() => setCurrentDate(new Date(year, month - 1, 1))}>
-              <Icon icon="eva:chevron-left-fill" />
-            </IconButton>
-            <Typography variant="h6" sx={{ fontWeight: 700, minWidth: 200, textAlign: 'center', textTransform: 'capitalize' }}>
-              {monthName}
-            </Typography>
-            <IconButton size="small" onClick={() => setCurrentDate(new Date(year, month + 1, 1))}>
-              <Icon icon="eva:chevron-right-fill" />
-            </IconButton>
-          </Stack>
-          <Button size="small" variant="outlined" onClick={() => setCurrentDate(new Date())}>
-            Aujourd&apos;hui
-          </Button>
-        </Stack>
+      {/* Month navigation */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2, gap: 2 }}>
+        <IconButton onClick={prevMonth} size="small">
+          <Icon icon="mdi:chevron-left" />
+        </IconButton>
+        <Typography variant="h6" fontWeight={600} minWidth={200} textAlign="center">
+          {MOIS_LABELS[month]} {year}
+        </Typography>
+        <IconButton onClick={nextMonth} size="small">
+          <Icon icon="mdi:chevron-right" />
+        </IconButton>
+      </Box>
 
-        {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
-        ) : (
-          <Box sx={{ p: 2 }}>
-            {/* Weekday headers */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 1 }}>
-              {WEEKDAYS.map((d) => (
-                <Typography key={d} variant="caption" sx={{ textAlign: 'center', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 1 }}>
-                  {d}
+      {/* Calendar grid */}
+      <Card variant="outlined">
+        <CardContent sx={{ p: 1 }}>
+          {/* Day headers */}
+          <Grid container columns={7} sx={{ mb: 0.5 }}>
+            {JOURS.map((j) => (
+              <Grid item xs={1} key={j}>
+                <Typography
+                  variant="caption"
+                  fontWeight={700}
+                  color="text.secondary"
+                  sx={{ display: 'block', textAlign: 'center', py: 0.5 }}
+                >
+                  {j}
                 </Typography>
-              ))}
-            </Box>
+              </Grid>
+            ))}
+          </Grid>
 
-            {/* Days grid */}
-            <Box
-              sx={{
-                display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)',
-                gap: '1px', bgcolor: (t) => alpha(t.palette.divider, 0.3),
-                border: (t) => `1px solid ${alpha(t.palette.divider, 0.3)}`,
-                borderRadius: 1, overflow: 'hidden',
-              }}
-            >
-              {days.map((date, i) => {
-                const dayEvts = getEventsForDate(date);
-                const isSelected = selectedDay && date && selectedDay.toDateString() === date.toDateString();
+          {/* Day cells */}
+          {isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Grid container columns={7}>
+              {cells.map((day, idx) => {
+                if (!day) {
+                  return (
+                    <Grid item xs={1} key={`empty-${idx}`}>
+                      <Box sx={{ minHeight: 90, bgcolor: 'action.hover', m: 0.25, borderRadius: 1 }} />
+                    </Grid>
+                  );
+                }
+
+                const isToday =
+                  day === today.getDate() &&
+                  month === today.getMonth() &&
+                  year === today.getFullYear();
+
+                const dayEvents = events.filter((e) =>
+                  e.dateDebut && isSameDay(e.dateDebut, year, month, day)
+                );
+
                 return (
-                  <Box
-                    key={i}
-                    onClick={() => date && setSelectedDay(date)}
-                    sx={{
-                      minHeight: 90, p: 0.75, cursor: date ? 'pointer' : 'default',
-                      bgcolor: !date
-                        ? (t) => alpha(t.palette.grey[500], 0.06)
-                        : isToday(date)
-                        ? (t) => alpha(t.palette.primary.main, 0.06)
-                        : isSelected
-                        ? (t) => alpha(t.palette.primary.main, 0.1)
-                        : 'background.paper',
-                      '&:hover': date ? { bgcolor: (t) => alpha(t.palette.primary.main, 0.05) } : {},
-                    }}
-                  >
-                    {date && (
-                      <>
-                        <Box sx={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: isToday(date) ? 'primary.main' : 'transparent', mb: 0.5 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 600, color: isToday(date) ? 'common.white' : 'text.secondary' }}>
-                            {date.getDate()}
+                  <Grid item xs={1} key={day}>
+                    <Box
+                      onClick={() => handleOpenForm(day)}
+                      sx={{
+                        minHeight: 90,
+                        m: 0.25,
+                        p: 0.5,
+                        borderRadius: 1,
+                        border: isToday ? '2px solid' : '1px solid',
+                        borderColor: isToday ? 'primary.main' : 'divider',
+                        bgcolor: isToday ? 'primary.lighter' : 'background.paper',
+                        cursor: 'pointer',
+                        '&:hover': { bgcolor: 'action.hover' },
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        fontWeight={isToday ? 800 : 400}
+                        color={isToday ? 'primary.main' : 'text.primary'}
+                        sx={{ display: 'block', textAlign: 'right', mb: 0.5 }}
+                      >
+                        {day}
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                        {dayEvents.slice(0, 3).map((ev) => (
+                          <EventChip key={ev._id} event={ev} onClick={setSelectedEvent} />
+                        ))}
+                        {dayEvents.length > 3 && (
+                          <Typography variant="caption" color="text.secondary" sx={{ pl: 0.5 }}>
+                            +{dayEvents.length - 3} autres
                           </Typography>
-                        </Box>
-                        <Stack spacing={0.25}>
-                          {dayEvts.slice(0, 2).map((ev) => (
-                            <Chip
-                              key={ev._id || ev.id}
-                              label={ev.title}
-                              size="small"
-                              color={EVENT_COLORS[ev.type] || 'primary'}
-                              sx={{ height: 16, fontSize: 9, maxWidth: '100%', '& .MuiChip-label': { px: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
-                            />
-                          ))}
-                          {dayEvts.length > 2 && (
-                            <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: 9 }}>+{dayEvts.length - 2}</Typography>
-                          )}
-                        </Stack>
-                      </>
-                    )}
-                  </Box>
+                        )}
+                      </Box>
+                    </Box>
+                  </Grid>
                 );
               })}
-            </Box>
+            </Grid>
+          )}
+        </CardContent>
+      </Card>
 
-            {/* Selected day events */}
-            {selectedDay && (
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, textTransform: 'capitalize' }}>
-                  {selectedDay.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </Typography>
-                {dayEvents.length === 0 ? (
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography sx={{ color: 'text.secondary' }}>Aucun événement</Typography>
-                    <Button size="small" onClick={() => { setSelectedDate(selectedDay); setDialogOpen(true); }}>+ Ajouter</Button>
-                  </Stack>
-                ) : (
-                  <Stack spacing={1.5}>
-                    {dayEvents.map((ev) => (
-                      <Card key={ev._id || ev.id} elevation={0} sx={{ border: (t) => `1px solid ${alpha(t.palette.divider, 0.5)}`, borderRadius: 1.5 }}>
-                        <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-                          <Stack direction="row" alignItems="center" spacing={1.5}>
-                            <Icon icon="eva:calendar-fill" width={18} />
-                            <Box sx={{ flexGrow: 1 }}>
-                              <Typography variant="body2" sx={{ fontWeight: 600 }}>{ev.title}</Typography>
-                              {ev.description && <Typography variant="caption" sx={{ color: 'text.secondary' }}>{ev.description}</Typography>}
-                            </Box>
-                            {ev.type && <Chip label={ev.type} size="small" color={EVENT_COLORS[ev.type] || 'default'} sx={{ height: 20, fontSize: 10 }} />}
-                          </Stack>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </Stack>
+      {/* ── Dialog: Event detail ── */}
+      <Dialog
+        open={!!selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        {selectedEvent && (() => {
+          const cfg = TYPE_CONFIG[selectedEvent.type] || TYPE_CONFIG.reunion;
+          const isOutlook = selectedEvent.syncSource === 'outlook' || !!selectedEvent.outlookEventId;
+          return (
+            <>
+              <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Icon icon={cfg.icon} width={20} />
+                {selectedEvent.titre}
+                {isOutlook && (
+                  <Chip
+                    size="small"
+                    color="primary"
+                    icon={<Icon icon="mdi:microsoft-outlook" width={12} />}
+                    label="Outlook"
+                    sx={{ ml: 1 }}
+                  />
                 )}
-              </Box>
-            )}
-          </Box>
-        )}
-      </Paper>
+              </DialogTitle>
+              <DialogContent dividers>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Type</Typography>
+                    <Box>
+                      <Chip size="small" color={cfg.color} label={cfg.label} />
+                    </Box>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Début</Typography>
+                    <Typography variant="body2">{formatDate(selectedEvent.dateDebut)}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Fin</Typography>
+                    <Typography variant="body2">{formatDate(selectedEvent.dateFin)}</Typography>
+                  </Box>
+                  {selectedEvent.lieu && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Lieu</Typography>
+                      <Typography variant="body2">{selectedEvent.lieu}</Typography>
+                    </Box>
+                  )}
+                  {selectedEvent.description && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Description</Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {selectedEvent.description}
+                      </Typography>
+                    </Box>
+                  )}
+                  {selectedEvent.workspace && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Workspace</Typography>
+                      <Typography variant="body2">{selectedEvent.workspace}</Typography>
+                    </Box>
+                  )}
+                </Box>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  color="error"
+                  variant="outlined"
+                  startIcon={deleting ? <CircularProgress size={14} /> : <Icon icon="mdi:trash-can-outline" />}
+                  onClick={() => handleDelete(selectedEvent._id)}
+                  disabled={deleting}
+                >
+                  Supprimer
+                </Button>
+                <Button onClick={() => setSelectedEvent(null)}>Fermer</Button>
+              </DialogActions>
+            </>
+          );
+        })()}
+      </Dialog>
 
-      <EventFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} selectedDate={selectedDate} />
-    </motion.div>
+      {/* ── Dialog: Create event ── */}
+      <Dialog open={openForm} onClose={handleCloseForm} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Icon icon="mdi:calendar-plus" style={{ marginRight: 8, verticalAlign: 'middle' }} />
+          Nouvel événement
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              label="Titre *"
+              value={form.titre}
+              onChange={(e) => setForm((f) => ({ ...f, titre: e.target.value }))}
+              fullWidth
+              autoFocus
+              error={!form.titre.trim() && submitting}
+              helperText={!form.titre.trim() && submitting ? 'Le titre est requis' : ''}
+            />
+
+            <TextField
+              label="Début"
+              type="datetime-local"
+              value={form.dateDebut}
+              onChange={(e) => setForm((f) => ({ ...f, dateDebut: e.target.value }))}
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+            />
+
+            <TextField
+              label="Fin"
+              type="datetime-local"
+              value={form.dateFin}
+              onChange={(e) => setForm((f) => ({ ...f, dateFin: e.target.value }))}
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+            />
+
+            <FormControl fullWidth>
+              <InputLabel>Type</InputLabel>
+              <Select
+                value={form.type}
+                label="Type"
+                onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+              >
+                {Object.entries(TYPE_CONFIG)
+                  .filter(([k]) => k !== 'outlook')
+                  .map(([k, v]) => (
+                    <MenuItem key={k} value={k}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Icon icon={v.icon} width={16} />
+                        {v.label}
+                      </Box>
+                    </MenuItem>
+                  ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel>Workspace</InputLabel>
+              <Select
+                value={form.workspace}
+                label="Workspace"
+                onChange={(e) => setForm((f) => ({ ...f, workspace: e.target.value }))}
+              >
+                <MenuItem value="bureau">Bureau</MenuItem>
+                <MenuItem value="faytek">Faytek</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              label="Lieu"
+              value={form.lieu}
+              onChange={(e) => setForm((f) => ({ ...f, lieu: e.target.value }))}
+              fullWidth
+            />
+
+            <TextField
+              label="Description"
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              fullWidth
+              multiline
+              rows={3}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseForm} disabled={submitting}>Annuler</Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={submitting}
+            startIcon={submitting ? <CircularProgress size={14} /> : <Icon icon="mdi:check" />}
+          >
+            {submitting ? 'Création…' : 'Créer'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }
