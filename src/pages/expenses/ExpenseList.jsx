@@ -2,14 +2,6 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
-const COLOR_MAP = {
-  primary: '#6366f1',
-  success: '#22c55e',
-  warning: '#f59e0b',
-  error: '#ef4444',
-  info: '#3b82f6',
-  default: '#6b7280',
-};
   Box, Typography, Stack, Card, CardContent, Button, TextField, InputAdornment,
   Select, MenuItem, Chip, IconButton, CircularProgress, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper, Alert, Badge, Collapse,
@@ -25,6 +17,16 @@ import {
   fetchAlertes,
   marquerAlerteLue,
 } from '../../redux/slices/expenseSlice';
+
+const COLOR_MAP = {
+  primary: '#6366f1',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
+  default: '#6b7280',
+};
+
 
 const CATEGORY_LABELS = {
   transport: 'Transport', restauration: 'Restauration', hebergement: 'Hébergement',
