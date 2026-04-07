@@ -47,7 +47,7 @@ function SkillsPanel({ agent }) {
     <Stack spacing={0.5} sx={{ mt: 1 }}>
       {skills.map((skill) => (
         <Stack key={skill._id} direction="row" alignItems="center" justifyContent="space-between"
-          sx={{ py: 0.5, px: 1, borderRadius: 1, bgcolor: (t) => alpha(t.palette.background.default, 0.6) }}>
+          sx={{ py: 0.5, px: 1, borderRadius: 1, bgcolor: (t) => alpha('#1a1a2e', 0.6) }}>
           <Box>
             <Typography variant="body2" sx={{ fontWeight: 600 }}>{skill.nom}</Typography>
             {skill.categorie && (
@@ -83,7 +83,7 @@ function MemoryPanel({ agent }) {
   return (
     <Stack spacing={0.75} sx={{ mt: 1 }}>
       {memories.slice(0, 5).map((mem, i) => (
-        <Box key={mem._id || i} sx={{ p: 1, borderRadius: 1, bgcolor: (t) => alpha(t.palette.primary.main, 0.05) }}>
+        <Box key={mem._id || i} sx={{ p: 1, borderRadius: 1, bgcolor: (t) => alpha('#6366f1', 0.05) }}>
           <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
             {mem.type || 'Mémoire'}
           </Typography>
@@ -150,7 +150,7 @@ function AgentCard({ agent, onStatusChange }) {
 
         {/* Tâche courante */}
         {agent.currentTask && (
-          <Box sx={{ mb: 1.5, p: 1, borderRadius: 1, bgcolor: (t) => alpha(t.palette.primary.main, 0.06) }}>
+          <Box sx={{ mb: 1.5, p: 1, borderRadius: 1, bgcolor: (t) => alpha('#6366f1', 0.06) }}>
             <Typography variant="caption" sx={{ fontWeight: 600 }}>Tâche en cours :</Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.25, fontSize: 12 }}>
               {agent.currentTask}
