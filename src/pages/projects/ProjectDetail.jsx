@@ -370,7 +370,7 @@ export default function ProjectDetail() {
           <LinearProgress
             variant="determinate"
             value={progression}
-            sx={{ height: 10, borderRadius: 5, bgcolor: (t) => alpha(t.palette.primary.main, 0.12) }}
+            sx={{ height: 10, borderRadius: 5, bgcolor: (t) => alpha('#6366f1', 0.12) }}
           />
           <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1, display: 'block' }}>
             {doneTasks} / {projectTasks.length} tâches terminées
