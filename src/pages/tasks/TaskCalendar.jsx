@@ -104,7 +104,7 @@ export default function TaskCalendar() {
                       minHeight: 90,
                       p: 0.75,
                       bgcolor: !date
-                        ? (t) => alpha(t.palette.grey[500], 0.06)
+                        ? alpha('#6b7280', 0.06)
                         : isToday(date)
                         ? alpha('#6366f1', 0.06)
                         : 'background.paper',
