@@ -37,7 +37,7 @@ const navConfig = [
         icon: ICONS.tasks,
         children: [
           { title: 'Liste', path: PATH_DASHBOARD.tasks.list },
-          { title: 'Board', path: PATH_DASHBOARD.tasks.board },
+          { title: 'Kanban', path: PATH_DASHBOARD.tasks.board },
           { title: 'Timeline', path: PATH_DASHBOARD.tasks.timeline },
           { title: 'Calendrier', path: PATH_DASHBOARD.tasks.calendar },
         ],
