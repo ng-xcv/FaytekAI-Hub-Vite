@@ -38,7 +38,7 @@ function TaskCard({ task, index }) {
             boxShadow: snapshot.isDragging ? '0 8px 24px rgba(0,0,0,0.15)' : 'none',
             transform: snapshot.isDragging ? 'rotate(2deg)' : 'none',
             transition: 'box-shadow 0.2s, transform 0.2s',
-            bgcolor: snapshot.isDragging ? (t) => alpha(t.palette.primary.main, 0.04) : 'background.paper',
+            bgcolor: snapshot.isDragging ? alpha('#6366f1', 0.04) : 'background.paper',
           }}
         >
           <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
@@ -114,7 +114,7 @@ function BoardColumn({ column, tasks, onAddTask }) {
               p: 1.5,
               pt: 0,
               minHeight: 100,
-              bgcolor: snapshot.isDraggingOver ? (t) => alpha(t.palette.primary.main, 0.05) : 'transparent',
+              bgcolor: snapshot.isDraggingOver ? alpha('#6366f1', 0.05) : 'transparent',
               transition: 'background 0.2s',
               borderRadius: '0 0 8px 8px',
               overflowY: 'auto',
