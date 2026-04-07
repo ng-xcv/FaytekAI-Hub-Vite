@@ -2,6 +2,14 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
+const COLOR_MAP = {
+  primary: '#6366f1',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
+  default: '#6b7280',
+};
   Box, Typography, Stack, Card, CardContent, Button, TextField, InputAdornment,
   Select, MenuItem, Chip, IconButton, CircularProgress, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper, Alert, Badge, Collapse,
@@ -157,7 +165,7 @@ export default function ExpenseList() {
                 <Box
                   sx={{
                     width: 44, height: 44, borderRadius: 1.5,
-                    bgcolor: (t) => alpha(t.palette[s.color].main, 0.12),
+                    bgcolor: (t) => alpha(COLOR_MAP[s.color] || '#6366f1', 0.12),
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
                 >
