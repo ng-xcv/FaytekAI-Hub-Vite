@@ -39,7 +39,7 @@ export default function Login() {
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default', p: 2 }}>
-      <Paper elevation={0} sx={{ width: '100%', maxWidth: 420, p: 4, borderRadius: 3, bgcolor: 'background.paper', border: (t) => `1px solid ${alpha(t.palette.primary.main, 0.12)}` }}>
+      <Paper elevation={0} sx={{ width: '100%', maxWidth: 420, p: 4, borderRadius: 3, bgcolor: 'background.paper', border: (t) => `1px solid ${alpha('#6366f1', 0.12)}` }}>
         <Stack alignItems="center" spacing={1} sx={{ mb: 4 }}>
           <Box sx={{ width: 52, height: 52, borderRadius: 2, bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Typography sx={{ fontSize: 22, fontWeight: 900, color: 'primary.contrastText' }}>F</Typography>
