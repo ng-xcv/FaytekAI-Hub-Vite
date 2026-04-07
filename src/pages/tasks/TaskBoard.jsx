@@ -5,7 +5,7 @@ import { alpha } from '@mui/material/styles';
 import { Icon } from '@iconify/react';
 import { motion } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { fetchTasks, updateTask, createTask } from '../../redux/slices/taskSlice';
+import { fetchTasks, updateTaskStatus, createTask } from '../../redux/slices/taskSlice';
 
 const COLUMNS = [
   { id: 'todo', title: 'À faire', color: 'text.secondary' },
@@ -160,9 +160,7 @@ export default function TaskBoard() {
     const { draggableId, destination, source } = result;
     if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
-    const task = tasks.find((t) => t._id === draggableId);
-    if (!task) return;
-    dispatch(updateTask({ id: draggableId, payload: { ...task, status: destination.droppableId } }));
+    dispatch(updateTaskStatus({ id: draggableId, statut: destination.droppableId }));
   };
 
   const handleAddTask = async (status) => {
@@ -175,7 +173,7 @@ export default function TaskBoard() {
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800 }}>Tableau Kanban</Typography>
+        <Typography variant="h4" sx={{ fontWeight: 800 }}>Kanban</Typography>
         <Button
           variant="contained"
           startIcon={<Icon icon="eva:plus-fill" />}
