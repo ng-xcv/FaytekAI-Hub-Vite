@@ -6,6 +6,7 @@ import useResponsive from '../../hooks/useResponsive';
 import { HEADER, NAVBAR } from '../../config';
 import DashboardHeader from './header/DashboardHeader';
 import NavbarVertical from './navbar/NavbarVertical';
+import OverdueTasksAlert from '../../components/OverdueTasksAlert';
 
 const MainStyle = styled('main')(({ theme }) => ({
   flexGrow: 1,
@@ -29,6 +30,8 @@ export default function DashboardLayout() {
     <Box sx={{ minHeight: '100vh' }}>
       <DashboardHeader onOpenSidebar={() => setOpen(true)} />
       <NavbarVertical isOpenSidebar={open} onCloseSidebar={() => setOpen(false)} />
+      {/* Alertes globales — deadlines dépassées */}
+      <OverdueTasksAlert />
       <MainStyle>
         <Outlet />
       </MainStyle>
