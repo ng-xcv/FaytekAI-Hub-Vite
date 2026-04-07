@@ -48,7 +48,7 @@ function SidebarInner({ user }) {
         <NavSection navConfig={navConfig} />
       </Box>
       <Box sx={{ p: 2, flexShrink: 0 }}>
-        <Box sx={{ p: 1.5, borderRadius: 1.5, bgcolor: (t) => alpha(t.palette.primary.main, 0.06), border: (t) => `1px dashed ${alpha(t.palette.primary.main, 0.2)}` }}>
+        <Box sx={{ p: 1.5, borderRadius: 1.5, bgcolor: alpha('#6366f1', 0.06), border: (t) => `1px dashed ${alpha('#6366f1', 0.2)}` }}>
           <Stack direction="row" alignItems="center" spacing={1}>
             <Icon icon="eva:flash-fill" width={14} />
             <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600 }}>FaytekAI Hub v2.0</Typography>
