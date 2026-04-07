@@ -20,7 +20,14 @@ const handlers = {
 
 const reducer = (state, action) => handlers[action.type] ? handlers[action.type](state, action) : state;
 
-export const AuthContext = createContext({ ...initialState, method: 'jwt', login: () => Promise.resolve(), loginMicrosoft: () => Promise.resolve(), logout: () => Promise.resolve(), updateProfile: () => Promise.resolve() });
+export const AuthContext = createContext({
+  ...initialState,
+  method: 'jwt',
+  login: () => Promise.resolve(),
+  loginMicrosoft: () => Promise.resolve(),
+  logout: () => Promise.resolve(),
+  updateProfile: () => Promise.resolve(),
+});
 
 AuthProvider.propTypes = { children: PropTypes.node };
 
@@ -30,8 +37,14 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const initialize = async () => {
       try {
-        const { data } = await axiosInstance.get('/api/auth/me');
-        dispatch({ type: 'INITIALIZE', payload: { isAuthenticated: true, user: resolveImg(data.user) } });
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          dispatch({ type: 'INITIALIZE', payload: { isAuthenticated: false, user: null } });
+          return;
+        }
+        // Route correcte du backend
+        const { data } = await axiosInstance.get('/api/auth/my-account');
+        dispatch({ type: 'INITIALIZE', payload: { isAuthenticated: true, user: resolveImg(data) } });
       } catch {
         dispatch({ type: 'INITIALIZE', payload: { isAuthenticated: false, user: null } });
       }
@@ -41,25 +54,34 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const { data } = await axiosInstance.post('/api/auth/login', { email, password });
+    // Stocker les tokens
+    if (data.accessToken) localStorage.setItem('accessToken', data.accessToken);
+    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
     dispatch({ type: 'LOGIN', payload: { user: resolveImg(data.user) } });
     return resolveImg(data.user);
   };
 
   const loginMicrosoft = async (msToken) => {
     const { data } = await axiosInstance.post('/api/auth/microsoft', { token: msToken });
+    if (data.accessToken) localStorage.setItem('accessToken', data.accessToken);
+    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
     dispatch({ type: 'LOGIN', payload: { user: resolveImg(data.user) } });
     return resolveImg(data.user);
   };
 
   const logout = async () => {
     await axiosInstance.post('/api/auth/logout').catch(() => {});
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     dispatch({ type: 'LOGOUT' });
   };
 
   const updateProfile = async (payload) => {
     const formData = new FormData();
-    Object.entries(payload).forEach(([k, v]) => { if (v !== undefined) formData.append(k, v); });
-    const { data } = await axiosInstance.put('/api/auth/profile', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+    Object.entries(payload).forEach(([key, val]) => { if (val !== undefined) formData.append(key, val); });
+    const { data } = await axiosInstance.put('/api/auth/profile', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     dispatch({ type: 'UPDATE_PROFILE', payload: { user: resolveImg(data.user) } });
     return resolveImg(data.user);
   };
