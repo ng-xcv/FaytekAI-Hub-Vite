@@ -1,38 +1,38 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSnackbar } from 'notistack';
 import { fetchTasks, clearOverdueAlert } from '../redux/slices/taskSlice';
 
-/**
- * Composant invisible — vérifie les tâches avec deadline dépassée
- * et affiche une snackbar in-app au chargement du dashboard.
- * Se monte une seule fois dans DashboardLayout.
- */
+const STORAGE_KEY = 'faytekAI_overdueShown';
+
 export default function OverdueTasksAlert() {
   const dispatch = useDispatch();
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const overdueAlerts = useSelector((s) => s.task.overdueAlerts);
   const isLoading = useSelector((s) => s.task.isLoading);
+  const shownRef = useRef(false);
 
-  // Charger les tâches au montage du dashboard
   useEffect(() => {
     dispatch(fetchTasks());
   }, [dispatch]);
 
-  // Afficher les alertes quand la liste est chargée
   useEffect(() => {
-    if (isLoading || overdueAlerts.length === 0) return;
+    if (isLoading || overdueAlerts.length === 0 || shownRef.current) return;
 
-    // Afficher max 3 alertes pour ne pas spammer
-    const toShow = overdueAlerts.slice(0, 3);
+    // Vérifier si déjà montré dans cette session de navigateur
+    const sessionShown = sessionStorage.getItem(STORAGE_KEY);
+    if (sessionShown) return;
 
-    toShow.forEach((task) => {
+    shownRef.current = true;
+    sessionStorage.setItem(STORAGE_KEY, '1');
+
+    // Max 2 alertes pour ne pas spammer
+    overdueAlerts.slice(0, 2).forEach((task) => {
       const key = enqueueSnackbar(
-        `⏰ Deadline dépassée : "${task.titre}"`,
+        `⏰ "${task.titre || task.title}" — deadline dépassée`,
         {
           variant: 'warning',
-          persist: false,
-          autoHideDuration: 6000,
+          autoHideDuration: 5000,
           onClick: () => {
             closeSnackbar(key);
             dispatch(clearOverdueAlert(task._id));
@@ -41,15 +41,14 @@ export default function OverdueTasksAlert() {
       );
     });
 
-    if (overdueAlerts.length > 3) {
+    if (overdueAlerts.length > 2) {
       enqueueSnackbar(
-        `+ ${overdueAlerts.length - 3} autre(s) tâche(s) en retard`,
-        { variant: 'warning', autoHideDuration: 6000 }
+        `+ ${overdueAlerts.length - 2} tâche(s) en retard — voir l'icône 🔔`,
+        { variant: 'info', autoHideDuration: 5000 }
       );
     }
-    // Ne déclencher qu'une seule fois
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading]);
 
-  return null; // Pas de rendu visible
+  return null;
 }
