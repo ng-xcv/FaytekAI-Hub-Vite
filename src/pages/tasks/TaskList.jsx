@@ -140,7 +140,7 @@ function TaskGroup({ status, tasks, onEdit, onDelete, onStatusChange }) {
               sx={{
                 border: (t) => `1px solid ${alpha(t.palette.divider, 0.4)}`,
                 borderRadius: 1.5,
-                '&:hover': { borderColor: 'primary.main', bgcolor: (t) => alpha(t.palette.primary.main, 0.03) },
+                '&:hover': { borderColor: 'primary.main', bgcolor: alpha('#6366f1', 0.03) },
               }}
             >
               <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
