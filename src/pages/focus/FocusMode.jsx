@@ -200,7 +200,7 @@ export default function FocusMode() {
                       onClick={() => setFocusTask(task)}
                       sx={{
                         p: 1.5, borderRadius: 1.5, cursor: 'pointer',
-                        border: (t) => `1px solid ${focusTask?._id === task._id ? t.palette.primary.main : alpha(t.palette.divider, 0.4)}`,
+                        border: (t) => `1px solid ${focusTask?._id === task._id ? '#6366f1' : alpha(t.palette.divider, 0.4)}`,
                         bgcolor: focusTask?._id === task._id ? alpha('#6366f1', 0.06) : 'transparent',
                         '&:hover': { bgcolor: alpha('#6366f1', 0.04) },
                       }}
