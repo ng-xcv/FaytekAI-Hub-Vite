@@ -9,6 +9,18 @@ const resolveImg = (user) => {
   return user;
 };
 
+
+// Normaliser le user — my-account retourne role={_id,nom,...}, login retourne role="Admin"
+const normalizeUser = (user) => {
+  if (!user) return user;
+  return {
+    ...user,
+    role: typeof user.role === 'object' && user.role !== null
+      ? (user.role.nom || user.role.name || 'Admin')
+      : (user.role || 'Admin'),
+  };
+};
+
 const initialState = { isAuthenticated: false, isInitialized: false, user: null };
 
 const handlers = {
@@ -44,7 +56,7 @@ export function AuthProvider({ children }) {
         }
         // Route correcte du backend
         const { data } = await axiosInstance.get('/api/auth/my-account');
-        dispatch({ type: 'INITIALIZE', payload: { isAuthenticated: true, user: resolveImg(data) } });
+        dispatch({ type: 'INITIALIZE', payload: { isAuthenticated: true, user: normalizeUser(resolveImg(data)) } });
       } catch {
         dispatch({ type: 'INITIALIZE', payload: { isAuthenticated: false, user: null } });
       }
