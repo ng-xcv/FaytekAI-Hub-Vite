@@ -84,7 +84,7 @@ export default function TaskTimeline() {
                   sx={{
                     width: dayW, flexShrink: 0, textAlign: 'center', p: 1,
                     borderRight: (t) => `1px solid ${alpha(t.palette.divider, 0.3)}`,
-                    bgcolor: isToday(day) ? (t) => alpha(t.palette.primary.main, 0.08) : 'transparent',
+                    bgcolor: isToday(day) ? alpha('#6366f1', 0.08) : 'transparent',
                   }}
                 >
                   <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: 10 }}>
