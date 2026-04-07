@@ -31,8 +31,8 @@ export default function IdeaDetail() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    axiosInstance.get(`/api/ideas/${id}`)
-      .then(({ data }) => setIdea(data.idea || data))
+    axiosInstance.get(`/api/idea/${id}`)
+      .then(({ data }) => setIdea(data.data || data))
       .catch(() => setError('Impossible de charger l\'idée'))
       .finally(() => setLoading(false));
   }, [id]);
@@ -40,8 +40,8 @@ export default function IdeaDetail() {
   const handleBrainstorm = async () => {
     setBrainstorming(true);
     try {
-      const { data } = await axiosInstance.post(`/api/ideas/${id}/brainstorm`);
-      setIdea(data.idea || data);
+      const { data } = await axiosInstance.post(`/api/idea/${id}/brainstorm/start`);
+      setIdea(data.data || data);
     } catch (e) {
       setError('Erreur lors du brainstorm');
     } finally {
@@ -51,7 +51,7 @@ export default function IdeaDetail() {
 
   const handleArchive = async () => {
     try {
-      await axiosInstance.post(`/api/ideas/${id}/archive`);
+      await axiosInstance.post(`/api/idea/${id}/archive`);
       navigate('/dashboard/ideas/list');
     } catch {
       setError('Erreur lors de l\'archivage');
