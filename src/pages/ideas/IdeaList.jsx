@@ -10,7 +10,7 @@ import { alpha } from '@mui/material/styles';
 import { Icon } from '@iconify/react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
-import { fetchIdeas, createIdea } from '../../redux/slices/ideaSlice';
+import { fetchIdeas, createIdea, startBrainstorm } from '../../redux/slices/ideaSlice';
 
 const STATUT_CONFIG = {
   brute: { label: 'Brute', color: 'warning', emoji: '💡' },
@@ -22,7 +22,7 @@ const STATUT_CONFIG = {
 
 const PROGRESS_STEPS = { business: 25, market: 50, architecture: 75, development: 90, synthese: 95, terminee: 100 };
 
-function IdeaCard({ idea, onClick }) {
+function IdeaCard({ idea, onClick, onBrainstorm }) {
   const cfg = STATUT_CONFIG[idea.statut] || STATUT_CONFIG.brute;
   const progress = idea.brainstorm?.etapeCourante ? PROGRESS_STEPS[idea.brainstorm.etapeCourante] || 0 : 0;
   const actionsCount = idea.actionsProposees?.length || 0;
@@ -83,6 +83,21 @@ function IdeaCard({ idea, onClick }) {
           </Typography>
         </CardContent>
       </CardActionArea>
+      {idea.statut !== 'archivee' && idea.statut !== 'actionnee' && (
+        <Box sx={{ px: 1.5, pb: 1.5 }}>
+          <Button
+            size="small"
+            variant={idea.statut === 'en_brainstorm' ? 'contained' : 'outlined'}
+            color="info"
+            fullWidth
+            startIcon={<Icon icon="eva:bulb-fill" width={16} />}
+            onClick={(e) => { e.stopPropagation(); onBrainstorm(idea); }}
+            sx={{ borderRadius: 1.5, fontWeight: 600, fontSize: 12 }}
+          >
+            {idea.statut === 'en_brainstorm' ? 'Continuer Brainstorm' : '🧠 Brainstormer'}
+          </Button>
+        </Box>
+      )}
     </Card>
   );
 }
@@ -128,6 +143,15 @@ export default function IdeaList() {
   useEffect(() => {
     dispatch(fetchIdeas({}));
   }, [dispatch]);
+
+  const handleBrainstorm = async (idea) => {
+    try {
+      await dispatch(startBrainstorm(idea._id)).unwrap();
+      navigate(`/dashboard/ideas/${idea._id}`);
+    } catch {
+      navigate(`/dashboard/ideas/${idea._id}`);
+    }
+  };
 
   const filtered = ideas.filter((i) => {
     const matchSearch = !search || i.titre?.toLowerCase().includes(search.toLowerCase());
@@ -177,7 +201,7 @@ export default function IdeaList() {
         <Grid container spacing={2.5}>
           {filtered.map((idea) => (
             <Grid key={idea._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <IdeaCard idea={idea} onClick={() => navigate(`/dashboard/ideas/${idea._id}`)} />
+              <IdeaCard idea={idea} onClick={() => navigate(`/dashboard/ideas/${idea._id}`)} onBrainstorm={handleBrainstorm} />
             </Grid>
           ))}
         </Grid>
