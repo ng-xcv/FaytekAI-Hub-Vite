@@ -135,7 +135,7 @@ export default function ProjectList() {
                           <Box
                             sx={{
                               width: 44, height: 44, borderRadius: 1.5,
-                              bgcolor: projet.couleur ? alpha(projet.couleur, 0.18) : (t) => alpha(t.palette.primary.main, 0.12),
+                              bgcolor: projet.couleur ? alpha(projet.couleur, 0.18) : (t) => alpha('#6366f1', 0.12),
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}
                           >
@@ -176,7 +176,7 @@ export default function ProjectList() {
                               sx={{
                                 height: 6,
                                 borderRadius: 3,
-                                bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
+                                bgcolor: (t) => alpha('#6366f1', 0.12),
                               }}
                             />
                           </Box>
