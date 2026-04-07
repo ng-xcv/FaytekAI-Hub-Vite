@@ -1,13 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-const COLOR_MAP = {
-  primary: '#6366f1',
-  success: '#22c55e',
-  warning: '#f59e0b',
-  error: '#ef4444',
-  info: '#3b82f6',
-  default: '#6b7280',
-};
   Box, Typography, Stack, Card, CardContent, Grid, Button, Chip, CircularProgress,
   Divider, Alert, Tooltip as MuiTooltip,
 } from '@mui/material';
@@ -23,6 +15,16 @@ import { fetchTasks } from '../../redux/slices/taskSlice';
 import { fetchProjects } from '../../redux/slices/projectSlice';
 import { fetchExpenses } from '../../redux/slices/expenseSlice';
 import axios from 'axios';
+
+const COLOR_MAP = {
+  primary: '#6366f1',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
+  default: '#6b7280',
+};
+
 
 const COLORS = ['#6366F1', '#22D3EE', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6'];
 
