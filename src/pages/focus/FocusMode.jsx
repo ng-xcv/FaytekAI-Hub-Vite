@@ -169,7 +169,7 @@ export default function FocusMode() {
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Tâche en cours</Typography>
               {focusTask ? (
-                <Stack direction="row" alignItems="center" spacing={1.5} sx={{ p: 1.5, borderRadius: 1.5, bgcolor: (t) => alpha(t.palette.primary.main, 0.06) }}>
+                <Stack direction="row" alignItems="center" spacing={1.5} sx={{ p: 1.5, borderRadius: 1.5, bgcolor: alpha('#6366f1', 0.06) }}>
                   <Icon icon="eva:checkmark-square-2-fill" width={20} />
                   <Typography variant="body2" sx={{ flexGrow: 1, fontWeight: 600 }}>{focusTask.title}</Typography>
                   <Button size="small" onClick={() => setFocusTask(null)}>Changer</Button>
@@ -201,8 +201,8 @@ export default function FocusMode() {
                       sx={{
                         p: 1.5, borderRadius: 1.5, cursor: 'pointer',
                         border: (t) => `1px solid ${focusTask?._id === task._id ? t.palette.primary.main : alpha(t.palette.divider, 0.4)}`,
-                        bgcolor: focusTask?._id === task._id ? (t) => alpha(t.palette.primary.main, 0.06) : 'transparent',
-                        '&:hover': { bgcolor: (t) => alpha(t.palette.primary.main, 0.04) },
+                        bgcolor: focusTask?._id === task._id ? alpha('#6366f1', 0.06) : 'transparent',
+                        '&:hover': { bgcolor: alpha('#6366f1', 0.04) },
                       }}
                     >
                       <Icon icon={focusTask?._id === task._id ? 'eva:checkmark-circle-2-fill' : 'eva:radio-button-off-fill'} width={18} />
