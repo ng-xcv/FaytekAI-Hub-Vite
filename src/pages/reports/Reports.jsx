@@ -168,7 +168,7 @@ export default function Reports() {
       </Stack>
 
       {/* === SECTION GÉNÉRATION === */}
-      <Card elevation={0} sx={{ border: (t) => `1px solid ${alpha(t.palette.primary.main, 0.25)}`, borderRadius: 2, mb: 3, bgcolor: (t) => alpha(t.palette.primary.main, 0.03) }}>
+      <Card elevation={0} sx={{ border: (t) => `1px solid ${alpha('#6366f1', 0.25)}`, borderRadius: 2, mb: 3, bgcolor: (t) => alpha('#6366f1', 0.03) }}>
         <CardContent>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
             <Icon icon="solar:document-add-bold" style={{ marginRight: 8, verticalAlign: 'middle' }} />
@@ -259,9 +259,9 @@ export default function Reports() {
                       onClick={() => setRapportActif(r)}
                       sx={{
                         p: 1.5, borderRadius: 1.5, cursor: 'pointer',
-                        border: (t) => `1px solid ${rapportActif?._id === r._id ? t.palette.primary.main : alpha(t.palette.divider, 0.5)}`,
-                        bgcolor: (t) => rapportActif?._id === r._id ? alpha(t.palette.primary.main, 0.06) : 'transparent',
-                        '&:hover': { bgcolor: (t) => alpha(t.palette.primary.main, 0.04) },
+                        border: (t) => `1px solid ${rapportActif?._id === r._id ? '#6366f1' : alpha(t.palette.divider, 0.5)}`,
+                        bgcolor: (t) => rapportActif?._id === r._id ? alpha('#6366f1', 0.06) : 'transparent',
+                        '&:hover': { bgcolor: (t) => alpha('#6366f1', 0.04) },
                         transition: 'all 0.15s',
                       }}
                     >
@@ -334,7 +334,7 @@ export default function Reports() {
 
                     {/* Résumé IA */}
                     {rapportActif.contenu?.resume && (
-                      <Box sx={{ p: 1.5, borderRadius: 1.5, bgcolor: (t) => alpha(t.palette.info.main, 0.06), border: (t) => `1px solid ${alpha(t.palette.info.main, 0.2)}`, mb: 2.5 }}>
+                      <Box sx={{ p: 1.5, borderRadius: 1.5, bgcolor: (t) => alpha('#3b82f6', 0.06), border: (t) => `1px solid ${alpha('#3b82f6', 0.2)}`, mb: 2.5 }}>
                         <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.7 }}>
                           {rapportActif.contenu.resume}
                         </Typography>
