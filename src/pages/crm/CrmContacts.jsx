@@ -1,215 +1,469 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  Box, Typography, Stack, Card, CardContent, Button, TextField, InputAdornment,
-  Select, MenuItem, Chip, IconButton, CircularProgress, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Paper, Avatar,
-  Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel,
+  Box, Button, Chip, CircularProgress, Dialog, DialogContent, DialogTitle,
+  Drawer, FormControl, Grid, IconButton, InputLabel, LinearProgress, MenuItem,
+  Paper, Select, Stack, Table, TableBody, TableCell, TableContainer, TableHead,
+  TableRow, TextField, Typography, Divider, Alert
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import { Icon } from '@iconify/react';
-import { motion } from 'framer-motion';
-import { useForm, Controller } from 'react-hook-form';
-import { fetchContacts, createContact } from '../../redux/slices/crmSlice';
+import {
+  Add as AddIcon, Delete as DeleteIcon, Upload as UploadIcon,
+  Close as CloseIcon, PersonAdd as PersonAddIcon
+} from '@mui/icons-material';
+import {
+  fetchContacts, createContact, updateContact, deleteContact,
+  fetchContactInteractions, createInteraction, fetchCRMStats
+} from '../../redux/slices/crmSlice';
 
-const STATUS_CONFIG = {
-  'à_contacter': { label: 'À contacter', color: 'default' },
-  'contacté': { label: 'Contacté', color: 'secondary' },
-  'en_cours': { label: 'En cours', color: 'info' },
-  'intéressé': { label: 'Intéressé', color: 'warning' },
-  'converti': { label: 'Converti', color: 'success' },
-  'perdu': { label: 'Perdu', color: 'error' },
+const STATUT_COLORS = {
+  prospect: 'default',
+  contact: 'secondary',
+  qualified: 'info',
+  won: 'success',
+  lost: 'error',
 };
 
-const SECTORS = ['BTP', 'Restauration', 'Immobilier', 'Logistique', 'Tech', 'Commerce', 'Santé', 'Éducation', 'Autre'];
-const PRIORITIES = ['haute', 'moyenne', 'faible'];
+const STATUTS = ['prospect', 'contact', 'qualified', 'won', 'lost'];
+const TYPES_INTERACTION = ['email', 'appel', 'reunion', 'note'];
 
-function ContactFormDialog({ open, onClose }) {
-  const dispatch = useDispatch();
-  const { register, handleSubmit, reset, control } = useForm({
-    defaultValues: { company_name: '', contact_name: '', email: '', phone: '', sector: 'Autre', status: 'à_contacter', priority: 'moyenne', city: '', notes: '' },
-  });
-  useEffect(() => { if (open) reset(); }, [open, reset]);
-  const onSubmit = async (data) => {
-    await dispatch(createContact(data));
-    onClose();
-  };
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <DialogTitle sx={{ fontWeight: 700 }}>Nouveau contact</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2.5} sx={{ mt: 1 }}>
-            <TextField {...register('company_name')} label="Nom de l'entreprise" fullWidth required autoFocus />
-            <TextField {...register('contact_name')} label="Nom du contact" fullWidth />
-            <Stack direction="row" spacing={2}>
-              <TextField {...register('email')} label="Email" type="email" fullWidth />
-              <TextField {...register('phone')} label="Téléphone" fullWidth />
-            </Stack>
-            <Stack direction="row" spacing={2}>
-              <FormControl fullWidth>
-                <InputLabel>Secteur</InputLabel>
-                <Controller name="sector" control={control} render={({ field }) => (
-                  <Select {...field} label="Secteur">{SECTORS.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}</Select>
-                )} />
-              </FormControl>
-              <FormControl fullWidth>
-                <InputLabel>Priorité</InputLabel>
-                <Controller name="priority" control={control} render={({ field }) => (
-                  <Select {...field} label="Priorité">{PRIORITIES.map((p) => <MenuItem key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</MenuItem>)}</Select>
-                )} />
-              </FormControl>
-            </Stack>
-            <TextField {...register('city')} label="Ville" fullWidth />
-            <TextField {...register('notes')} label="Notes" fullWidth multiline rows={2} />
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={onClose} variant="outlined">Annuler</Button>
-          <Button type="submit" variant="contained" sx={{ borderRadius: 1.5, fontWeight: 700 }}>Créer</Button>
-        </DialogActions>
-      </form>
-    </Dialog>
-  );
-}
+const defaultContactForm = {
+  nom: '', prenom: '', email: '', telephone: '',
+  entreprise: '', pays: 'Sénégal', statutPipeline: 'prospect', notes: ''
+};
+
+const defaultInteractionForm = {
+  type: 'note', notes: '', dateInteraction: new Date().toISOString().slice(0, 16)
+};
 
 export default function CrmContacts() {
   const dispatch = useDispatch();
-  const { contacts, isLoading, total } = useSelector((s) => s.crm);
+  const { contacts, interactions, stats, isLoading } = useSelector(s => s.crm);
+
   const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterSector, setFilterSector] = useState('all');
+  const [filterStatut, setFilterStatut] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [contactForm, setContactForm] = useState(defaultContactForm);
+  const [editingContact, setEditingContact] = useState(null);
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [interactionForm, setInteractionForm] = useState(defaultInteractionForm);
+  const [interactionDialogOpen, setInteractionDialogOpen] = useState(false);
+  const [importAlert, setImportAlert] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef();
 
   useEffect(() => {
-    dispatch(fetchContacts({}));
-  }, [dispatch]);
+    dispatch(fetchContacts({ search, statutPipeline: filterStatut }));
+    dispatch(fetchCRMStats());
+  }, [dispatch, search, filterStatut]);
 
-  const filtered = contacts.filter((c) => {
-    const matchSearch = !search || c.company_name?.toLowerCase().includes(search.toLowerCase()) || c.contact_name?.toLowerCase().includes(search.toLowerCase()) || c.city?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === 'all' || c.status === filterStatus;
-    const matchSector = filterSector === 'all' || c.sector === filterSector;
-    return matchSearch && matchStatus && matchSector;
-  });
+  const handleOpenContact = (contact) => {
+    setSelectedContact(contact);
+    setDrawerOpen(true);
+    dispatch(fetchContactInteractions(contact._id));
+  };
 
-  // Stats
-  const stats = [
-    { label: 'Total', value: total || contacts.length, color: 'primary', icon: 'eva:people-fill' },
-    { label: 'Convertis', value: contacts.filter((c) => c.status === 'converti').length, color: 'success', icon: 'eva:checkmark-circle-2-fill' },
-    { label: 'En cours', value: contacts.filter((c) => c.status === 'en_cours').length, color: 'info', icon: 'eva:loader-fill' },
-    { label: 'À contacter', value: contacts.filter((c) => c.status === 'à_contacter').length, color: 'warning', icon: 'eva:phone-fill' },
-  ];
+  const handleSaveContact = async () => {
+    setSaving(true);
+    try {
+      if (editingContact) {
+        await dispatch(updateContact({ id: editingContact._id, payload: contactForm })).unwrap();
+      } else {
+        await dispatch(createContact(contactForm)).unwrap();
+      }
+      setDialogOpen(false);
+      setEditingContact(null);
+      setContactForm(defaultContactForm);
+      dispatch(fetchCRMStats());
+    } catch (err) {
+      // silently ignore
+    }
+    setSaving(false);
+  };
+
+  const handleEditContact = (contact, e) => {
+    e.stopPropagation();
+    setEditingContact(contact);
+    setContactForm({
+      nom: contact.nom || '', prenom: contact.prenom || '',
+      email: contact.email || '', telephone: contact.telephone || '',
+      entreprise: contact.entreprise || '', pays: contact.pays || 'Sénégal',
+      statutPipeline: contact.statutPipeline || 'prospect', notes: contact.notes || ''
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDeleteContact = async (id, e) => {
+    e.stopPropagation();
+    if (!window.confirm('Supprimer ce contact ?')) return;
+    await dispatch(deleteContact(id)).unwrap();
+    if (selectedContact?._id === id) { setDrawerOpen(false); setSelectedContact(null); }
+    dispatch(fetchCRMStats());
+  };
+
+  const handleAddInteraction = async () => {
+    if (!selectedContact || !interactionForm.notes.trim()) return;
+    setSaving(true);
+    try {
+      await dispatch(createInteraction({ contactId: selectedContact._id, payload: interactionForm })).unwrap();
+      setInteractionDialogOpen(false);
+      setInteractionForm(defaultInteractionForm);
+    } catch (err) {}
+    setSaving(false);
+  };
+
+  const handleImportCSV = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/crm/contacts/import-csv', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      setImportAlert({ type: res.ok ? 'success' : 'error', message: data.message });
+      if (res.ok) dispatch(fetchContacts({ search, statutPipeline: filterStatut }));
+    } catch (err) {
+      setImportAlert({ type: 'error', message: 'Erreur import' });
+    }
+    fileInputRef.current.value = '';
+    setTimeout(() => setImportAlert(null), 5000);
+  };
+
+  const contactInteractions = selectedContact ? (interactions[selectedContact._id] || []) : [];
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800 }}>Contacts CRM</Typography>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" fontWeight={700} gutterBottom>
+        CRM — Contacts
+      </Typography>
+
+      {/* Stats pipeline */}
+      {stats && (
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid item xs={12} sm={4}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h4" color="primary" fontWeight={700}>{stats.totalContacts}</Typography>
+              <Typography variant="body2" color="text.secondary">Total contacts</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h4" color="success.main" fontWeight={700}>{stats.tauxConversion}%</Typography>
+              <Typography variant="body2" color="text.secondary">Taux de conversion</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h4" color="secondary.main" fontWeight={700}>{stats.recentInteractions}</Typography>
+              <Typography variant="body2" color="text.secondary">Interactions (30j)</Typography>
+            </Paper>
+          </Grid>
+          {/* Pipeline bar */}
+          <Grid item xs={12}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>Pipeline</Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {STATUTS.map(s => (
+                  <Chip
+                    key={s}
+                    label={`${s}: ${stats.pipeline?.[s] || 0}`}
+                    color={STATUT_COLORS[s]}
+                    size="small"
+                  />
+                ))}
+              </Stack>
+            </Paper>
+          </Grid>
+        </Grid>
+      )}
+
+      {/* Alertes */}
+      {importAlert && (
+        <Alert severity={importAlert.type} sx={{ mb: 2 }}>{importAlert.message}</Alert>
+      )}
+
+      {/* Filtres + actions */}
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
+        <TextField
+          size="small"
+          placeholder="Rechercher..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          sx={{ minWidth: 220 }}
+        />
+        <FormControl size="small" sx={{ minWidth: 160 }}>
+          <InputLabel>Statut pipeline</InputLabel>
+          <Select value={filterStatut} label="Statut pipeline" onChange={e => setFilterStatut(e.target.value)}>
+            <MenuItem value="">Tous</MenuItem>
+            {STATUTS.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+          </Select>
+        </FormControl>
+        <Box sx={{ flex: 1 }} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          style={{ display: 'none' }}
+          onChange={handleImportCSV}
+        />
+        <Button
+          variant="outlined"
+          startIcon={<UploadIcon />}
+          onClick={() => fileInputRef.current?.click()}
+          size="small"
+        >
+          Import CSV
+        </Button>
         <Button
           variant="contained"
-          startIcon={<Icon icon="eva:plus-fill" />}
-          onClick={() => setDialogOpen(true)}
-          sx={{ borderRadius: 1.5, fontWeight: 700 }}
+          startIcon={<AddIcon />}
+          onClick={() => { setEditingContact(null); setContactForm(defaultContactForm); setDialogOpen(true); }}
+          size="small"
         >
           Nouveau contact
         </Button>
       </Stack>
 
-      {/* Stats */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
-        {stats.map((s) => (
-          <Card key={s.label} elevation={0} sx={{ flex: 1, border: (t) => `1px solid ${alpha(t.palette.divider, 0.5)}`, borderRadius: 2 }}>
-            <CardContent>
-              <Stack direction="row" alignItems="center" spacing={1.5}>
-                <Box sx={{ width: 40, height: 40, borderRadius: 1.5, bgcolor: (t) => alpha(t.palette[s.color].main, 0.12), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon icon={s.icon} width={20} />
-                </Box>
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 800 }}>{s.value}</Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>{s.label}</Typography>
-                </Box>
-              </Stack>
-            </CardContent>
-          </Card>
-        ))}
-      </Stack>
-
-      {/* Filters */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          size="small"
-          placeholder="Rechercher un contact..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          InputProps={{ startAdornment: <InputAdornment position="start"><Icon icon="eva:search-fill" width={18} /></InputAdornment> }}
-          sx={{ flexGrow: 1 }}
-        />
-        <Select size="small" value={filterSector} onChange={(e) => setFilterSector(e.target.value)} sx={{ minWidth: 140 }}>
-          <MenuItem value="all">Tous les secteurs</MenuItem>
-          {SECTORS.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-        </Select>
-        <Select size="small" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} sx={{ minWidth: 150 }}>
-          <MenuItem value="all">Tous les statuts</MenuItem>
-          {Object.entries(STATUS_CONFIG).map(([v, c]) => <MenuItem key={v} value={v}>{c.label}</MenuItem>)}
-        </Select>
-      </Stack>
-
-      {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
-      ) : (
-        <TableContainer component={Paper} elevation={0} sx={{ border: (t) => `1px solid ${alpha(t.palette.divider, 0.5)}`, borderRadius: 2 }}>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: (t) => alpha(t.palette.grey[500], 0.05) }}>
-                {['Entreprise', 'Contact', 'Secteur', 'Statut', 'Priorité', 'Ville', 'Dernier contact', 'Actions'].map((h) => (
-                  <TableCell key={h} sx={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', color: 'text.secondary' }}>{h}</TableCell>
-                ))}
+      {/* Table */}
+      <TableContainer component={Paper}>
+        {isLoading && <LinearProgress />}
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Nom</TableCell>
+              <TableCell>Prénom</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Téléphone</TableCell>
+              <TableCell>Entreprise</TableCell>
+              <TableCell>Statut</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {contacts.map(contact => (
+              <TableRow
+                key={contact._id}
+                hover
+                sx={{ cursor: 'pointer' }}
+                onClick={() => handleOpenContact(contact)}
+              >
+                <TableCell>{contact.nom}</TableCell>
+                <TableCell>{contact.prenom}</TableCell>
+                <TableCell>{contact.email}</TableCell>
+                <TableCell>{contact.telephone}</TableCell>
+                <TableCell>{contact.entreprise}</TableCell>
+                <TableCell>
+                  <Chip
+                    label={contact.statutPipeline}
+                    color={STATUT_COLORS[contact.statutPipeline] || 'default'}
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell align="right">
+                  <IconButton size="small" onClick={e => handleEditContact(contact, e)}>
+                    <PersonAddIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" color="error" onClick={e => handleDeleteContact(contact._id, e)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={8} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>Aucun contact trouvé</TableCell></TableRow>
-              ) : (
-                filtered.map((contact) => {
-                  const sc = STATUS_CONFIG[contact.status] || { label: contact.status || '—', color: 'default' };
-                  return (
-                    <TableRow key={contact._id || contact.id} sx={{ '&:hover': { bgcolor: (t) => alpha(t.palette.grey[500], 0.04) } }}>
-                      <TableCell>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Avatar sx={{ width: 28, height: 28, fontSize: 12, bgcolor: 'primary.main' }}>
-                            {contact.company_name?.[0]?.toUpperCase() || '?'}
-                          </Avatar>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{contact.company_name}</Typography>
-                        </Stack>
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 13 }}>{contact.contact_name || '—'}</TableCell>
-                      <TableCell>
-                        <Chip label={contact.sector || '—'} size="small" variant="outlined" sx={{ height: 22, fontSize: 11 }} />
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={sc.label} size="small" color={sc.color} sx={{ height: 22, fontSize: 11 }} />
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 13, textTransform: 'capitalize' }}>{contact.priority || '—'}</TableCell>
-                      <TableCell sx={{ fontSize: 13 }}>{contact.city || '—'}</TableCell>
-                      <TableCell sx={{ fontSize: 13, color: 'text.secondary' }}>
-                        {contact.last_contact_at ? new Date(contact.last_contact_at).toLocaleDateString('fr-FR') : 'Jamais'}
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={0.5}>
-                          {contact.phone && <IconButton size="small" component="a" href={`tel:${contact.phone}`}><Icon icon="eva:phone-fill" width={15} /></IconButton>}
-                          {contact.email && <IconButton size="small" component="a" href={`mailto:${contact.email}`}><Icon icon="eva:email-fill" width={15} /></IconButton>}
-                          <IconButton size="small"><Icon icon="eva:edit-2-fill" width={15} /></IconButton>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+            ))}
+            {!isLoading && contacts.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  <Typography variant="body2" color="text.secondary" py={3}>
+                    Aucun contact trouvé
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      <ContactFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
-    </motion.div>
+      {/* Dialog Nouveau / Edit Contact */}
+      <Dialog open={dialogOpen} onClose={() => { setDialogOpen(false); setEditingContact(null); }} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {editingContact ? 'Modifier le contact' : 'Nouveau contact'}
+          <IconButton sx={{ position: 'absolute', right: 8, top: 8 }} onClick={() => { setDialogOpen(false); setEditingContact(null); }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Nom *"
+              value={contactForm.nom}
+              onChange={e => setContactForm(f => ({ ...f, nom: e.target.value }))}
+              required fullWidth size="small"
+            />
+            <TextField
+              label="Prénom"
+              value={contactForm.prenom}
+              onChange={e => setContactForm(f => ({ ...f, prenom: e.target.value }))}
+              fullWidth size="small"
+            />
+            <TextField
+              label="Email"
+              type="email"
+              value={contactForm.email}
+              onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))}
+              fullWidth size="small"
+            />
+            <TextField
+              label="Téléphone"
+              value={contactForm.telephone}
+              onChange={e => setContactForm(f => ({ ...f, telephone: e.target.value }))}
+              fullWidth size="small"
+            />
+            <TextField
+              label="Entreprise"
+              value={contactForm.entreprise}
+              onChange={e => setContactForm(f => ({ ...f, entreprise: e.target.value }))}
+              fullWidth size="small"
+            />
+            <TextField
+              label="Pays"
+              value={contactForm.pays}
+              onChange={e => setContactForm(f => ({ ...f, pays: e.target.value }))}
+              fullWidth size="small"
+            />
+            <FormControl fullWidth size="small">
+              <InputLabel>Statut pipeline</InputLabel>
+              <Select
+                value={contactForm.statutPipeline}
+                label="Statut pipeline"
+                onChange={e => setContactForm(f => ({ ...f, statutPipeline: e.target.value }))}
+              >
+                {STATUTS.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <TextField
+              label="Notes"
+              value={contactForm.notes}
+              onChange={e => setContactForm(f => ({ ...f, notes: e.target.value }))}
+              fullWidth multiline rows={2} size="small"
+            />
+            <Button
+              variant="contained"
+              disabled={!contactForm.nom.trim() || saving}
+              onClick={handleSaveContact}
+            >
+              {saving ? <CircularProgress size={20} /> : (editingContact ? 'Enregistrer' : 'Créer')}
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
+
+      {/* Drawer détail contact */}
+      <Drawer
+        anchor="right"
+        open={drawerOpen}
+        onClose={() => { setDrawerOpen(false); setSelectedContact(null); }}
+        PaperProps={{ sx: { width: { xs: '100%', sm: 420 }, p: 3 } }}
+      >
+        {selectedContact && (
+          <>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="h6">{selectedContact.nom} {selectedContact.prenom}</Typography>
+              <IconButton onClick={() => { setDrawerOpen(false); setSelectedContact(null); }}>
+                <CloseIcon />
+              </IconButton>
+            </Stack>
+            <Stack spacing={1} sx={{ mb: 2 }}>
+              <Typography variant="body2"><strong>Email :</strong> {selectedContact.email || '—'}</Typography>
+              <Typography variant="body2"><strong>Téléphone :</strong> {selectedContact.telephone || '—'}</Typography>
+              <Typography variant="body2"><strong>Entreprise :</strong> {selectedContact.entreprise || '—'}</Typography>
+              <Typography variant="body2"><strong>Pays :</strong> {selectedContact.pays}</Typography>
+              <Typography variant="body2">
+                <strong>Statut :</strong>{' '}
+                <Chip label={selectedContact.statutPipeline} color={STATUT_COLORS[selectedContact.statutPipeline]} size="small" />
+              </Typography>
+              {selectedContact.notes && (
+                <Typography variant="body2"><strong>Notes :</strong> {selectedContact.notes}</Typography>
+              )}
+            </Stack>
+            <Divider sx={{ mb: 2 }} />
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+              <Typography variant="subtitle1" fontWeight={600}>Interactions</Typography>
+              <Button
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={() => setInteractionDialogOpen(true)}
+              >
+                Ajouter
+              </Button>
+            </Stack>
+            <Stack spacing={1}>
+              {contactInteractions.length === 0 && (
+                <Typography variant="body2" color="text.secondary">Aucune interaction</Typography>
+              )}
+              {contactInteractions.map(inter => (
+                <Paper key={inter._id} variant="outlined" sx={{ p: 1.5 }}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Chip label={inter.type} size="small" />
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(inter.dateInteraction).toLocaleDateString('fr-FR')}
+                    </Typography>
+                  </Stack>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>{inter.notes}</Typography>
+                </Paper>
+              ))}
+            </Stack>
+          </>
+        )}
+      </Drawer>
+
+      {/* Dialog ajouter interaction */}
+      <Dialog open={interactionDialogOpen} onClose={() => setInteractionDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Ajouter une interaction
+          <IconButton sx={{ position: 'absolute', right: 8, top: 8 }} onClick={() => setInteractionDialogOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Type</InputLabel>
+              <Select
+                value={interactionForm.type}
+                label="Type"
+                onChange={e => setInteractionForm(f => ({ ...f, type: e.target.value }))}
+              >
+                {TYPES_INTERACTION.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <TextField
+              label="Notes *"
+              value={interactionForm.notes}
+              onChange={e => setInteractionForm(f => ({ ...f, notes: e.target.value }))}
+              fullWidth multiline rows={3} size="small" required
+            />
+            <TextField
+              label="Date"
+              type="datetime-local"
+              value={interactionForm.dateInteraction}
+              onChange={e => setInteractionForm(f => ({ ...f, dateInteraction: e.target.value }))}
+              fullWidth size="small"
+              InputLabelProps={{ shrink: true }}
+            />
+            <Button
+              variant="contained"
+              disabled={!interactionForm.notes.trim() || saving}
+              onClick={handleAddInteraction}
+            >
+              {saving ? <CircularProgress size={20} /> : 'Ajouter'}
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
+    </Box>
   );
 }
