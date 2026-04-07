@@ -184,7 +184,7 @@ export default function IdeaDetail() {
               </Typography>
               <Stack spacing={1.5}>
                 {actions.map((action, i) => (
-                  <Stack key={i} direction="row" alignItems="flex-start" spacing={1.5} sx={{ p: 1.5, borderRadius: 1.5, bgcolor: (t) => alpha(action.validee ? '#22c55e' : t.palette.grey[500], 0.06) }}>
+                  <Stack key={i} direction="row" alignItems="flex-start" spacing={1.5} sx={{ p: 1.5, borderRadius: 1.5, bgcolor: (t) => alpha(action.validee ? '#22c55e' : '#6b7280', 0.06) }}>
                     <Icon icon={action.validee ? 'eva:checkmark-circle-2-fill' : 'eva:radio-button-off-fill'} width={20} style={{ marginTop: 2, flexShrink: 0 }} />
                     <Box sx={{ flexGrow: 1 }}>
                       <Typography variant="body2" sx={{ fontWeight: 600, textDecoration: action.validee ? 'line-through' : 'none' }}>
